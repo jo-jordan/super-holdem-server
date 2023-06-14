@@ -1,8 +1,6 @@
 package jojo.game.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import jojo.game.enums.DataType
 
 
@@ -13,7 +11,7 @@ sealed class RespData {
     data class LoginDTO(
         override var type: DataType = DataType.LOGIN,
         var username: String = "",
-        var password: String = ""
+        var playerId: String = ""
     ) : RespData()
 
     data class RoomCreateDTO(
@@ -22,6 +20,7 @@ sealed class RespData {
 
     data class RoomJoinDTO(
         override var type: DataType = DataType.ROOM_JOIN,
+        var roomId: String = ""
     ) : RespData()
 
     data class RoomLeaveDTO(
@@ -30,10 +29,12 @@ sealed class RespData {
 
     data class RoomSearchDTO(
         override var type: DataType = DataType.ROOM_SEARCH,
+        var id: String = "",
+        var name: String = ""
     ) : RespData()
 
     data class BetDTO(
-        override var type: DataType = DataType.BET,
+        override var type: DataType = DataType.GAME_BET,
         var username: String = "",
         var password: String = ""
     ) : RespData()

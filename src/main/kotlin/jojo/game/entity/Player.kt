@@ -6,12 +6,13 @@ import jojo.game.state.PlayerState
 import jojo.game.utils.CardUtils
 
 class Player {
-    var state: PlayerState = PlayerState.PlayerWaitingState()
+    var state: PlayerState? = null
 
-    var id: Int = 0
+    var id: String = ""
     var name: String = ""
     var cardList: List<Card> = mutableListOf()
-    var score: Score = Score()
+    var ready: Boolean = false
+    var score: Int = 0
     var seatType: Position = Position.NONE
     var nextPlayer: Player? = null
     var room: Room? = null
@@ -19,7 +20,12 @@ class Player {
     var cardsToCalculate = emptyList<Card>()
 
     fun transitionTo(state: PlayerState) {
-        this.state.exit()
+        if (this.state == null) {
+            state.enter()
+            this.state = state
+            return
+        }
+        this.state?.exit()
         state.enter()
         this.state = state
     }

@@ -3,9 +3,19 @@ package jojo.game.enums
 enum class DataType {
     DEFAULT,
     LOGIN,
+
     ROOM_CREATE,
     ROOM_JOIN,
     ROOM_LEAVE,
     ROOM_SEARCH,
-    BET
+
+    GAME_READY,
+    GAME_START,
+    GAME_RESULT,
+    GAME_BET,
+    GAME_DEAL_PLAYER_CARDS,
+    GAME_DEAL_FLOP_CARDS,
+    GAME_DEAL_TURN_CARDS,
+    GAME_DEAL_RIVER_CARDS,
+
 }

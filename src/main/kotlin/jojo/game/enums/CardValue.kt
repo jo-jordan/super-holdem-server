@@ -1,5 +1,8 @@
 package jojo.game.enums
 
+/**
+ * Card value enum class
+ */
 enum class CardValue(val value: Int) {
     ACE(14),
     TWO(2),
