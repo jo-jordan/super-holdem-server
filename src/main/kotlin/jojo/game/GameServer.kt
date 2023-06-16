@@ -1,7 +1,10 @@
 package jojo.game
 
+import jojo.game.constant.CommonHeaders
 import jojo.game.core.Dispatcher
 import jojo.game.dto.CommonData
+import jojo.game.dto.ReqData
+import jojo.game.utils.JacksonUtils
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -13,7 +16,7 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
     private val logger = LoggerFactory.getLogger("GameServer")
 
     override fun onOpen(conn: WebSocket?, handshake: ClientHandshake?) {
-        if (handshake?.hasFieldValue("X-Player-Id") == false) {
+        if (handshake?.hasFieldValue(CommonHeaders.HEADER_PLAYER_ID) == false) {
             logger.info("{}: Not login, close.", conn?.remoteSocketAddress?.address?.hostAddress)
             conn?.close()
             return
@@ -21,8 +24,8 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
 
         conn?.setAttachment(
             CommonData(
-                handshake?.getFieldValue("X-Player-Id") ?: "",
-                handshake?.getFieldValue("X-Room-Id") ?: ""
+                handshake?.getFieldValue(CommonHeaders.HEADER_PLAYER_ID) ?: "",
+                handshake?.getFieldValue(CommonHeaders.HEADER_ROOM_ID) ?: ""
             )
         )
         logger.info("{}: Open connection.", conn?.remoteSocketAddress?.address?.hostAddress)
@@ -33,8 +36,12 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
     }
 
     override fun onMessage(conn: WebSocket?, message: String?) {
-        Dispatcher.dispatch(message, conn)
-        logger.info("{}: Message: {}", conn?.remoteSocketAddress?.address?.hostAddress, message)
+        val commonData = conn?.getAttachment<CommonData>()
+        val dtoData = JacksonUtils.objectMapper.readValue(message, ReqData::class.java).apply {
+            this.playerId = commonData?.playerId ?: ""
+            this.roomId = commonData?.roomId ?: ""
+        }
+        Dispatcher.dispatch(dtoData, conn)
     }
 
     override fun onError(conn: WebSocket?, ex: Exception?) {

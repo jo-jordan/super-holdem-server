@@ -4,10 +4,13 @@ enum class DataType {
     DEFAULT,
     LOGIN,
 
+    PLAYER_INFO,
+
     ROOM_CREATE,
     ROOM_JOIN,
     ROOM_LEAVE,
     ROOM_SEARCH,
+    ROOM_INFO,
 
     GAME_READY,
     GAME_START,
@@ -17,5 +20,7 @@ enum class DataType {
     GAME_DEAL_FLOP_CARDS,
     GAME_DEAL_TURN_CARDS,
     GAME_DEAL_RIVER_CARDS,
+    GAME_UPDATE_BET,
+    GAME_ROUND
 
 }

@@ -1,5 +1,7 @@
 package jojo.game.state
 
+import jojo.game.core.Dispatcher
+import jojo.game.dto.ReqData
 import jojo.game.entity.Player
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -59,6 +61,10 @@ sealed class PlayerState(open val player: Player) {
 
     class PlayerWaitingState(override val player: Player) : PlayerState(player) {
         override fun enter() {
+            // room must be RoomBettingState
+            player.room?.nextToBetPlayer = player.nextPlayer
+            player.room?.updateState()
+
             println("Player is waiting.")
         }
 
@@ -68,23 +74,19 @@ sealed class PlayerState(open val player: Player) {
 
     }
 
-    class PlayerBettingState(override val player: Player, val bet: Int) : PlayerState(player) {
+    class PlayerBettingState(override val player: Player) : PlayerState(player) {
         override fun enter() {
-            println("Player is betting $bet.")
+            val reqData = ReqData.GameUpdateBetDTO().apply {
+                this.roomId = player.room?.id ?: ""
+                this.playerId = player.id
+            }
+            Dispatcher.dispatch(reqData)
+            println("Player is betting.")
         }
 
         override fun exit() {
-            println("Player has placed a bet of $bet.")
+            println("Player has placed a bet of.")
         }
     }
 
-    class PlayerWaitingForOthersState(override val player: Player) : PlayerState(player) {
-        override fun enter() {
-            println("Player is waiting for others.")
-        }
-
-        override fun exit() {
-            println("Player is done waiting for others.")
-        }
-    }
 }

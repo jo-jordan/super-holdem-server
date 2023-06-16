@@ -18,6 +18,9 @@ class Player {
     var room: Room? = null
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())
     var cardsToCalculate = emptyList<Card>()
+    var isFold = false
+
+    var betMap: MutableMap<String, Int> = mutableMapOf()
 
     fun transitionTo(state: PlayerState) {
         if (this.state == null) {
@@ -28,6 +31,10 @@ class Player {
         this.state?.exit()
         state.enter()
         this.state = state
+    }
+
+    fun updateState() {
+        this.state?.update()
     }
 
     fun calculateMaxCardType(): Pair<CardType, List<Card>> {

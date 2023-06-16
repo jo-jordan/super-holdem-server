@@ -7,51 +7,54 @@ import jojo.game.dto.ReqData
 import jojo.game.enums.DataType
 import jojo.game.utils.JacksonUtils
 import org.java_websocket.WebSocket
+import org.slf4j.LoggerFactory
 
 object Dispatcher {
+
+    private val logger = LoggerFactory.getLogger("Dispatcher")
 
     private val roomController: RoomController = RoomController()
 
     private val gameController: GameController = GameController()
 
-    fun dispatch(data: String?, conn: WebSocket?) {
-        val commonData = conn?.getAttachment<CommonData>()
-        val dtoData = JacksonUtils.objectMapper.readValue(data, ReqData::class.java).apply {
-            this.playerId = commonData?.playerId ?: ""
-            this.roomId = commonData?.roomId ?: ""
-        }
+    fun dispatch(data: ReqData, conn: WebSocket? = null) {
 
-        when (dtoData.type)
+        logger.info("{}: Message: {}", conn?.remoteSocketAddress?.address?.hostAddress, data)
+
+        when (data.type)
         {
             DataType.ROOM_CREATE -> {
-                roomController.creatRoom(dtoData as ReqData.RoomCreateDTO, conn)
+                roomController.creatRoom(data as ReqData.RoomCreateDTO, conn)
             }
             DataType.ROOM_JOIN -> {
-                roomController.joinRoom(dtoData as ReqData.RoomJoinDTO, conn)
+                roomController.joinRoom(data as ReqData.RoomJoinDTO, conn)
             }
             DataType.ROOM_LEAVE -> {
-                roomController.leaveRoom(dtoData as ReqData.RoomLeaveDTO, conn)
+                roomController.leaveRoom(data as ReqData.RoomLeaveDTO, conn)
             }
             DataType.ROOM_SEARCH -> {
-                roomController.searchRoom(dtoData as ReqData.RoomSearchDTO, conn)
+                roomController.searchRoom(data as ReqData.RoomSearchDTO, conn)
             }
             DataType.GAME_READY -> {
-                gameController.ready(dtoData as ReqData.GameReadyDTO, conn)
+                gameController.ready(data as ReqData.GameReadyDTO)
             }
             DataType.GAME_START -> {
-                gameController.start(dtoData as ReqData.GameStartDTO, conn)
+                gameController.start(data as ReqData.GameStartDTO)
             }
             DataType.GAME_DEAL_PLAYER_CARDS -> {
-                gameController.dealPlayerCards(dtoData as ReqData.GameDealPlayerCardsDTO, conn)
+                gameController.dealPlayerCards(data as ReqData.GameDealPlayerCardsDTO)
             }
             DataType.GAME_DEAL_FLOP_CARDS -> {
-                gameController.dealFlopCards(dtoData as ReqData.GameDealFlopCardsDTO, conn)
+                gameController.dealFlopCards(data as ReqData.GameDealFlopCardsDTO)
             }
             DataType.GAME_DEAL_TURN_CARDS -> {
-                gameController.dealTurnCard(dtoData as ReqData.GameDealTurnCardsDTO, conn)
+                gameController.dealTurnCard(data as ReqData.GameDealTurnCardsDTO)
             }
             DataType.GAME_BET -> {
-                println("Bet")
+                gameController.bet(data as ReqData.GameBetDTO)
+            }
+            DataType.GAME_UPDATE_BET -> {
+                gameController.updateBet(data as ReqData.GameUpdateBetDTO)
             }
             else -> {
                 println("Default")
