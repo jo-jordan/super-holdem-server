@@ -6,26 +6,56 @@ import jojo.game.state.PlayerState
 import jojo.game.utils.CardUtils
 
 class Player {
-    var state: PlayerState = PlayerState.PlayerWaitingState()
+    var state: PlayerState? = null
 
-    var id: Int = 0
+    var id: String = ""
     var name: String = ""
     var cardList: List<Card> = mutableListOf()
-    var score: Score = Score()
+    var ready: Boolean = false
+    var score: Int = 0
     var seatType: Position = Position.NONE
     var nextPlayer: Player? = null
     var room: Room? = null
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())
     var cardsToCalculate = emptyList<Card>()
+    var isFold = false
+    private var chipsAmount : Int = 0
+
+    private var betLog: List<BetLog> = mutableListOf()
+
+    fun getBetLog(): List<BetLog> {
+        return this.betLog
+    }
+
+    fun getChipsAmount(): Int {
+        return this.chipsAmount
+    }
+
+    fun updateChips(amount: Int) {
+        chipsAmount += amount
+    }
+
+    fun addBetLog(log: BetLog) {
+        this.betLog += log
+    }
 
     fun transitionTo(state: PlayerState) {
-        this.state.exit()
+        if (this.state == null) {
+            state.enter()
+            this.state = state
+            return
+        }
+        this.state?.exit()
         state.enter()
         this.state = state
     }
 
+    fun updateState() {
+        this.state?.update()
+    }
+
     fun calculateMaxCardType(): Pair<CardType, List<Card>> {
-        val cardsOnTable: List<Card> = room?.cardList ?: emptyList()
+        val cardsOnTable: List<Card> = room?.cards ?: emptyList()
         val cardsInHand: List<Card> = cardList
 
         this.cardsToCalculate = cardsOnTable + cardsInHand

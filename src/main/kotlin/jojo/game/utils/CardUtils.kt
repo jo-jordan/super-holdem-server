@@ -38,6 +38,10 @@ object CardUtils {
         return cardList.removeAt(0)
     }
 
+    fun dealNullCard(): Card {
+        return Card(-1, -1, CardColor.SPADE)
+    }
+
     fun calculateCardType(cards: List<Card>): Pair<CardType, List<Card>> {
         return when {
             isRoyalStraightFlush(cards) -> {
