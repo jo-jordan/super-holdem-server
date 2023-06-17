@@ -24,7 +24,7 @@ class RoomController: Controller() {
         conn?.send(
             JacksonUtils.objectMapper.writeValueAsString(
                 RespData.RoomCreateDTO().apply {
-                    this.roomId = room.id
+                    this.roomInfo = room.getRoomInfo()
                 })
         )
     }
@@ -38,7 +38,12 @@ class RoomController: Controller() {
                 room.addPlayer(player)
                 room.addPlayerConnection(param.playerId, conn)
 
-                broadcast(param.playerId, room.id, JacksonUtils.objectMapper.writeValueAsString(room.getRoomInfo()))
+
+                broadcast(param.playerId, room.id, JacksonUtils.objectMapper.writeValueAsString(
+                    RespData.RoomCreateDTO().apply {
+                        this.roomInfo = room.getRoomInfo()
+                    }
+                ), true)
             }
         }
     }
@@ -52,14 +57,18 @@ class RoomController: Controller() {
                 GameGlobal.roomMap.remove(param.roomId)
             }
 
-            broadcast(param.playerId, room.id, JacksonUtils.objectMapper.writeValueAsString(room.getRoomInfo()))
+            broadcast(param.playerId, room.id, JacksonUtils.objectMapper.writeValueAsString(
+                RespData.RoomLeaveDTO().apply {
+                    this.roomInfo = room.getRoomInfo()
+                }
+            ))
         }
     }
 
     fun searchRoom(param: ReqData.RoomSearchDTO, conn: WebSocket?) {
         val result = RespData.RoomSearchDTO().apply {
             this.roomList = GameGlobal.roomMap.values.filter { it.name.contains(param.keyword) }.map {
-                RespData.RoomCreateDTO().apply {
+                RespData.RoomInfoDTO().apply {
                     roomId = it.id
                     roomName = it.name
                 }

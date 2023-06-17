@@ -176,6 +176,7 @@ class GameController: Controller() {
                 this.playerId = p.id
                 this.cardList = p.cardList
                 this.winChips = p.getChipsAmount() + p.getBetLog().sumOf { it.betAmount }
+                this.position = p.position
             }
         }
         val respData = RespData.GameResultDTO(winner = playerInfoList.first()).apply {

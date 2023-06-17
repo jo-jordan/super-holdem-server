@@ -13,7 +13,7 @@ class Player {
     var cardList: List<Card> = mutableListOf()
     var ready: Boolean = false
     var score: Int = 0
-    var seatType: Position = Position.NONE
+    var position: Position = Position.NONE
     var nextPlayer: Player? = null
     var room: Room? = null
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())

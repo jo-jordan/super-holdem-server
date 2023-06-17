@@ -122,8 +122,8 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     private fun blindFirstBet() {
-        playerList.find { it.seatType == Position.SMALL_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.smallBlind))
-        playerList.find { it.seatType == Position.BIG_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.bigBlind))
+        playerList.find { it.position == Position.SMALL_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.smallBlind))
+        playerList.find { it.position == Position.BIG_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.bigBlind))
     }
 
     private fun updatePlayerPosition() {
@@ -146,7 +146,7 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         newPositionList.addAll(positions.subList(0, round % playerCount))
 
         playerList.forEachIndexed { index, player ->
-            player.seatType = newPositionList[index]
+            player.position = newPositionList[index]
             // 根据玩家列表的顺序设置每个玩家的nextPlayer属性
             if (!player.isFold) {
                 var nextIndex = index + 1
@@ -182,6 +182,7 @@ class Room(val id: String = UUID.randomUUID().toString()) {
                 this.username = it.name
                 this.betAmount = it.getBetLog().sumOf { it.betAmount }
                 this.cardList = it.cardList
+                this.position = it.position
             }
         }
     }

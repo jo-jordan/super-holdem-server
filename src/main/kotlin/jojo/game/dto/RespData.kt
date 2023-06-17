@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import jojo.game.entity.Card
-import jojo.game.entity.Score
+import jojo.game.entity.GameConfig
 import jojo.game.enums.BetType
 import jojo.game.enums.DataType
+import jojo.game.enums.Position
 
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = false)
@@ -26,7 +27,7 @@ import jojo.game.enums.DataType
     JsonSubTypes.Type(value = RespData.GameDealTurnCardsDTO::class, name = "GAME_DEAL_TURN_CARDS"),
     JsonSubTypes.Type(value = RespData.GameDealRiverCardsDTO::class, name = "GAME_DEAL_RIVER_CARDS"),
     JsonSubTypes.Type(value = RespData.GameUpdateBetDTO::class, name = "GAME_UPDATE_BET"),
-    JsonSubTypes.Type(value = RespData.BetDTO::class, name = "GAME_BET"),
+    JsonSubTypes.Type(value = RespData.GameResultDTO::class, name = "GAME_RESULT"),
 )
 sealed class RespData {
     abstract var type: DataType
@@ -40,20 +41,22 @@ sealed class RespData {
 
     data class RoomCreateDTO(
         override var type: DataType = DataType.ROOM_CREATE,
-        var roomName: String = "",
+        var roomInfo: RoomInfoDTO = RoomInfoDTO(),
     ) : RespData()
 
     data class RoomJoinDTO(
         override var type: DataType = DataType.ROOM_JOIN,
+        var roomInfo: RoomInfoDTO = RoomInfoDTO(),
     ) : RespData()
 
     data class RoomLeaveDTO(
         override var type: DataType = DataType.ROOM_LEAVE,
+        var roomInfo: RoomInfoDTO = RoomInfoDTO(),
     ) : RespData()
 
     data class RoomSearchDTO(
         override var type: DataType = DataType.ROOM_SEARCH,
-        var roomList: List<RoomCreateDTO> = listOf(),
+        var roomList: List<RoomInfoDTO> = listOf(),
     ) : RespData()
 
     data class PlayerInfoDTO(
@@ -62,6 +65,7 @@ sealed class RespData {
         var betAmount: Int = 0,
         var cardList: List<Card> = listOf(),
         var winChips: Int = 0,
+        var position: Position = Position.NONE,
     ) : RespData()
 
     data class RoomInfoDTO(
@@ -69,6 +73,7 @@ sealed class RespData {
         var roomName: String = "",
         var playerInfoList: List<PlayerInfoDTO> = listOf(),
         var betAmount: Int = 0,
+        var gameConfig: GameConfig = GameConfig()
     ) : RespData()
 
     data class GameReadyDTO(
@@ -103,10 +108,6 @@ sealed class RespData {
     data class GameUpdateBetDTO(
         override var type: DataType = DataType.GAME_UPDATE_BET,
         var operationList: MutableMap<String, List<BetType>> = mutableMapOf(),
-    ) : RespData()
-
-    data class BetDTO(
-        override var type: DataType = DataType.GAME_BET,
     ) : RespData()
 
     data class GameResultDTO(
