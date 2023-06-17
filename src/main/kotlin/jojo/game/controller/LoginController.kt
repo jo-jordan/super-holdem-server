@@ -5,8 +5,7 @@ import jojo.game.dto.RespData
 import jojo.game.entity.Player
 import jojo.game.global.GameGlobal
 import jojo.game.utils.JacksonUtils
-import org.java_websocket.WebSocket
-import java.util.UUID
+import java.util.*
 
 class LoginController {
     fun login(param: ReqData.LoginDTO): String {

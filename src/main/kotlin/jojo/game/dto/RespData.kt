@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import jojo.game.entity.Card
 import jojo.game.entity.GameConfig
-import jojo.game.entity.Score
 import jojo.game.enums.BetType
 import jojo.game.enums.DataType
 import jojo.game.enums.Position
