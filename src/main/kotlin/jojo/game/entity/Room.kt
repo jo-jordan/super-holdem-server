@@ -3,20 +3,29 @@ package jojo.game.entity
 import jojo.game.dto.RespData
 import jojo.game.enums.BetType
 import jojo.game.enums.Position
+import jojo.game.enums.StageType
 import jojo.game.global.GameGlobal
 import jojo.game.state.RoomState
 import jojo.game.utils.CardUtils
 import org.java_websocket.WebSocket
-import java.util.UUID
+import java.util.*
 
 class Room(val id: String = UUID.randomUUID().toString()) {
     private var playerList: List<Player> = mutableListOf()
     var name: String = ""
-    var cardList: List<Card> = mutableListOf()
+    var cards: List<Card> = mutableListOf()
     var lastStateName = ""
     var gameConfig: GameConfig = GameConfig()
+    // record round count in the game, after the winner is determined, round will be increased by 1
     var round: Int  = 0
+
+    var betRound: Int = 0
+    var lastBetPlayer: Player? = null
     var nextToBetPlayer: Player? = null
+    var totalScore: Int = 0
+    var stage: StageType = StageType.BET_AFTER_DEAL_PLAYER_CARDS
+
+    private var betTypes: List<BetType> = mutableListOf()
 
     private var state: RoomState? = null
 
@@ -38,6 +47,20 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         state.enter()
         this.state = state
         this.lastStateName = state.javaClass.simpleName
+    }
+
+    fun updateBetTypes(types: List<BetType>) {
+        this.betTypes = types
+    }
+
+    fun updateWinScore() {
+
+    }
+
+    fun calculateWinner() {
+        playerList.forEach {
+            it.calculateMaxCardType()
+        }
     }
 
     fun getLeaderboard(): List<Player> {
@@ -85,6 +108,10 @@ class Room(val id: String = UUID.randomUUID().toString()) {
 
     private fun reset() {
         // TODO
+        this.totalScore = 0
+        this.cards = mutableListOf()
+        this.lastStateName = ""
+        this.betRound = 0
     }
 
     fun updateRound() {
@@ -95,8 +122,8 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     private fun blindFirstBet() {
-        playerList.find { it.seatType == Position.SMALL_BLIND }?.betMap?.put(BetType.NONE.name, gameConfig.smallBlind)
-        playerList.find { it.seatType == Position.BIG_BLIND }?.betMap?.put(BetType.NONE.name, gameConfig.bigBlind)
+        playerList.find { it.seatType == Position.SMALL_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.smallBlind))
+        playerList.find { it.seatType == Position.BIG_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.bigBlind))
     }
 
     private fun updatePlayerPosition() {
@@ -153,10 +180,40 @@ class Room(val id: String = UUID.randomUUID().toString()) {
             RespData.PlayerInfoDTO().apply {
                 this.playerId = it.id
                 this.username = it.name
-                this.betAmount = it.betMap.values.sum()
+                this.betAmount = it.getBetLog().sumOf { it.betAmount }
                 this.cardList = it.cardList
             }
         }
+    }
+
+    fun getBetTypes(): List<BetType> {
+        return betTypes
+    }
+
+    fun recordCall() {
+        val callScore = lastBetPlayer?.getBetLog()?.last()?.betAmount ?: 0
+        nextToBetPlayer?.updateChips(-callScore)
+        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, -callScore))
+    }
+
+    fun recordRaise(betAmount: Int) {
+        nextToBetPlayer?.updateChips(-betAmount)
+        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.RAISE, -betAmount))
+    }
+
+    fun recordFold() {
+        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.FOLD, 0))
+        nextToBetPlayer?.isFold = true
+    }
+
+    fun recordCheck() {
+        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CHECK, 0))
+    }
+
+    fun recordAllIn() {
+        val remaining = nextToBetPlayer?.getChipsAmount() ?: 0
+        nextToBetPlayer?.updateChips(-remaining)
+        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, -remaining))
     }
 
 }

@@ -2,10 +2,8 @@ package jojo.game.core
 
 import jojo.game.controller.GameController
 import jojo.game.controller.RoomController
-import jojo.game.dto.CommonData
 import jojo.game.dto.ReqData
 import jojo.game.enums.DataType
-import jojo.game.utils.JacksonUtils
 import org.java_websocket.WebSocket
 import org.slf4j.LoggerFactory
 
@@ -50,11 +48,17 @@ object Dispatcher {
             DataType.GAME_DEAL_TURN_CARDS -> {
                 gameController.dealTurnCard(data as ReqData.GameDealTurnCardsDTO)
             }
+            DataType.GAME_DEAL_RIVER_CARDS -> {
+                gameController.dealRiverCard(data as ReqData.GameDealRiverCardsDTO)
+            }
             DataType.GAME_BET -> {
                 gameController.bet(data as ReqData.GameBetDTO)
             }
             DataType.GAME_UPDATE_BET -> {
                 gameController.updateBet(data as ReqData.GameUpdateBetDTO)
+            }
+            DataType.GAME_RESULT -> {
+                gameController.result(data as ReqData.GameResultDTO)
             }
             else -> {
                 println("Default")

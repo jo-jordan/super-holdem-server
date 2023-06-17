@@ -1,0 +1,9 @@
+package jojo.game.enums
+
+enum class StageType {
+    BET_AFTER_DEAL_PLAYER_CARDS,
+    BET_AFTER_DEAL_FLOP_CARDS,
+    BET_AFTER_DEAL_TURN_CARDS,
+    BET_AFTER_DEAL_RIVER_CARDS,
+    RESULT
+}

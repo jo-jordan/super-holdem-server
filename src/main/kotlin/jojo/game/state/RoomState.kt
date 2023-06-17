@@ -3,10 +3,10 @@ package jojo.game.state
 import jojo.game.core.Dispatcher
 import jojo.game.dto.ReqData
 import jojo.game.entity.Room
+import jojo.game.enums.BetType
+import jojo.game.enums.StageType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
-import kotlin.concurrent.schedule
 import kotlin.concurrent.timer
 
 sealed class RoomState(open val room: Room) {
@@ -61,14 +61,10 @@ sealed class RoomState(open val room: Room) {
 
             room.updateRound()
 
-
-
-
             logger.trace("Room is starting.")
         }
 
         override fun exit() {
-            room.transitionTo(RoomDealPlayerCardsState(room))
             logger.trace("Room has started.")
         }
     }
@@ -93,6 +89,7 @@ sealed class RoomState(open val room: Room) {
 
         override fun enter() {
             logger.trace("Room is betting.")
+            continueCurrentRound()
         }
 
         override fun update() {
@@ -104,23 +101,38 @@ sealed class RoomState(open val room: Room) {
         }
 
         private fun continueCurrentRound() {
-            // 这里填写你的处理代码
             if (room.nextToBetPlayer == null) {
                 room.nextToBetPlayer = room.getPlayerList().first()
+                room.updateBetTypes(listOf(BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+            } else {
+                if (room.lastBetPlayer?.getBetLog()?.last()?.betType == BetType.CHECK) {
+                    room.updateBetTypes(listOf(BetType.CALL, BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                } else {
+                    room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                }
+
             }
             room.nextToBetPlayer?.transitionTo(PlayerState.PlayerBettingState(room.nextToBetPlayer!!))
         }
 
         private fun checkBetsEqual(): Boolean {
-            val maxBet = room.getPlayerList().maxOfOrNull { it.betMap.values.sum() }
-            return room.getPlayerList().all { player -> player.betMap.values.sum() == maxBet }
+            val maxBet = room.getPlayerList().maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } }
+            return room.getPlayerList().all { player -> player.getBetLog().sumOf { it.betAmount } == maxBet }
         }
 
         override fun exit() {
-            // 如果最后一轮是玩家卡牌发牌状态，那么转换到转牌发牌状态
-            if (room.lastStateName == RoomDealPlayerCardsState::class.java.simpleName) {
+            if (room.stage == StageType.BET_AFTER_DEAL_PLAYER_CARDS) {
+                room.transitionTo(RoomDealFlopCardsState(room))
+            } else if (room.stage == StageType.BET_AFTER_DEAL_FLOP_CARDS) {
                 room.transitionTo(RoomDealTurnCardState(room))
+            } else if (room.stage == StageType.BET_AFTER_DEAL_TURN_CARDS) {
+                room.transitionTo(RoomDealRiverCardState(room))
+            } else if (room.stage == StageType.BET_AFTER_DEAL_RIVER_CARDS) {
+                room.transitionTo(RoomEndState(room))
             }
+
+            room.betRound++
+
             logger.trace("Room has bet.")
         }
     }
@@ -128,16 +140,25 @@ sealed class RoomState(open val room: Room) {
     class RoomDealFlopCardsState(override val room: Room) : RoomState(room) {
         override fun enter() {
             logger.trace("Room is dealing flop cards.")
+            val reqData = ReqData.GameDealFlopCardsDTO().apply {
+                this.roomId = room.id
+            }
+            Dispatcher.dispatch(reqData)
         }
 
         override fun exit() {
             logger.trace("Room has dealt flop cards.")
+            room.transitionTo(RoomBettingState(room))
         }
     }
 
     class RoomDealTurnCardState(override val room: Room) : RoomState(room) {
         override fun enter() {
             logger.trace("Room is dealing turn card.")
+            val reqData = ReqData.GameDealTurnCardsDTO().apply {
+                this.roomId = room.id
+            }
+            Dispatcher.dispatch(reqData)
         }
 
         override fun exit() {
@@ -148,6 +169,10 @@ sealed class RoomState(open val room: Room) {
     class RoomDealRiverCardState(override val room: Room) : RoomState(room) {
         override fun enter() {
             logger.trace("Room is dealing river card.")
+            val reqData = ReqData.GameDealRiverCardsDTO().apply {
+                this.roomId = room.id
+            }
+            Dispatcher.dispatch(reqData)
         }
 
         override fun exit() {
@@ -157,6 +182,11 @@ sealed class RoomState(open val room: Room) {
 
     class RoomEndState(override val room: Room) : RoomState(room) {
         override fun enter() {
+            val reqData = ReqData.GameResultDTO().apply {
+                this.roomId = room.id
+            }
+            Dispatcher.dispatch(reqData)
+
             logger.trace("Room is ending.")
         }
 

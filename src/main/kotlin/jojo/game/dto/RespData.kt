@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import jojo.game.entity.Card
+import jojo.game.entity.Score
+import jojo.game.enums.BetType
 import jojo.game.enums.DataType
 
 
@@ -59,6 +61,7 @@ sealed class RespData {
         var username: String = "",
         var betAmount: Int = 0,
         var cardList: List<Card> = listOf(),
+        var winChips: Int = 0,
     ) : RespData()
 
     data class RoomInfoDTO(
@@ -78,32 +81,38 @@ sealed class RespData {
 
     data class GameDealPlayerCardsDTO(
         override var type: DataType = DataType.GAME_DEAL_PLAYER_CARDS,
-        var cards: List<String> = listOf(),
-        var roomInfo: RoomInfoDTO? = null,
+        var cards: List<Card> = listOf(),
+        var othersCards: MutableMap<String, List<Card>> = mutableMapOf(),
     ) : RespData()
 
     data class GameDealFlopCardsDTO(
         override var type: DataType = DataType.GAME_DEAL_FLOP_CARDS,
-        var cards: List<String> = listOf(),
+        var cards: List<Card> = listOf(),
     ) : RespData()
 
     data class GameDealTurnCardsDTO(
         override var type: DataType = DataType.GAME_DEAL_TURN_CARDS,
-        var cards: List<String> = listOf(),
+        var cards: List<Card> = listOf(),
     ) : RespData()
 
     data class GameDealRiverCardsDTO(
         override var type: DataType = DataType.GAME_DEAL_RIVER_CARDS,
-        var cards: List<String> = listOf(),
+        var cards: List<Card> = listOf(),
     ) : RespData()
 
     data class GameUpdateBetDTO(
         override var type: DataType = DataType.GAME_UPDATE_BET,
-        var roomInfo: RoomInfoDTO = RoomInfoDTO(),
-        var bet: Int = 0,
+        var operationList: MutableMap<String, List<BetType>> = mutableMapOf(),
     ) : RespData()
 
     data class BetDTO(
         override var type: DataType = DataType.GAME_BET,
+    ) : RespData()
+
+    data class GameResultDTO(
+        override var type: DataType = DataType.GAME_RESULT,
+        var winner: PlayerInfoDTO,
+        var winAmount: Int = 0,
+        var leaderboards: List<PlayerInfoDTO> = listOf(),
     ) : RespData()
 }

@@ -19,8 +19,25 @@ class Player {
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())
     var cardsToCalculate = emptyList<Card>()
     var isFold = false
+    private var chipsAmount : Int = 0
 
-    var betMap: MutableMap<String, Int> = mutableMapOf()
+    private var betLog: List<BetLog> = mutableListOf()
+
+    fun getBetLog(): List<BetLog> {
+        return this.betLog
+    }
+
+    fun getChipsAmount(): Int {
+        return this.chipsAmount
+    }
+
+    fun updateChips(amount: Int) {
+        chipsAmount += amount
+    }
+
+    fun addBetLog(log: BetLog) {
+        this.betLog += log
+    }
 
     fun transitionTo(state: PlayerState) {
         if (this.state == null) {
@@ -38,7 +55,7 @@ class Player {
     }
 
     fun calculateMaxCardType(): Pair<CardType, List<Card>> {
-        val cardsOnTable: List<Card> = room?.cardList ?: emptyList()
+        val cardsOnTable: List<Card> = room?.cards ?: emptyList()
         val cardsInHand: List<Card> = cardList
 
         this.cardsToCalculate = cardsOnTable + cardsInHand

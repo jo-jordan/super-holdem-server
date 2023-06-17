@@ -62,8 +62,8 @@ sealed class PlayerState(open val player: Player) {
     class PlayerWaitingState(override val player: Player) : PlayerState(player) {
         override fun enter() {
             // room must be RoomBettingState
+            player.room?.lastBetPlayer = player
             player.room?.nextToBetPlayer = player.nextPlayer
-            player.room?.updateState()
 
             println("Player is waiting.")
         }

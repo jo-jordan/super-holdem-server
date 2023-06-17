@@ -13,7 +13,6 @@ import org.java_websocket.handshake.ServerHandshake
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.slf4j.LoggerFactory
-import java.net.InetSocketAddress
 import java.net.URI
 import java.util.concurrent.CountDownLatch
 
