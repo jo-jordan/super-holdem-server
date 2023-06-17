@@ -50,7 +50,7 @@ class MainKtTest {
     fun login_should_work() {
         if (loginResult != null) return
         val countDownLatch = CountDownLatch(1)
-        val headers = mapOf<String, String>(
+        val headers = mapOf(
             Pair(CommonHeaders.HEADER_USERNAME, "test"),
             Pair(CommonHeaders.HEADER_PASSWORD, "test"))
         val client = object : WebSocketClient(URI.create("ws://127.0.0.1:8887"), headers) {
@@ -144,7 +144,7 @@ class MainKtTest {
 
     @Test
     fun player_ready_should_work() {
-        var result = sendAndGetResult(JacksonUtils.objectMapper.writeValueAsString(ReqData.GameReadyDTO()))
+        sendAndGetResult(JacksonUtils.objectMapper.writeValueAsString(ReqData.GameReadyDTO()))
     }
 
     @Test
@@ -165,6 +165,7 @@ class MainKtTest {
         assertTrue(room.getPlayerList().isEmpty())
     }
 
+    @Test
     fun simple_coverage() {
         CardUtils.init()
         CardUtils.shuffle()
@@ -195,10 +196,10 @@ class MainKtTest {
             logger.info("Table: ${card.color.value} ${card.value}")
         }
 
-        room.getPlayerList().forEach {
-            val pair = it.calculateMaxCardType()
+        room.getPlayerList().forEach { player ->
+            val pair = player.calculateMaxCardType()
 
-            logger.info("Player playerId: ${it.id} : ${pair.first} ${pair.second.map { it.color.value + it.value }}")
+            logger.info("Player playerId: ${player.id} : ${pair.first} ${pair.second.map { it.color.value + it.value }}")
         }
 
         val list = room.getLeaderboard()
