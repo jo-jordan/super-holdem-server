@@ -39,7 +39,8 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
         val commonData = conn?.getAttachment<CommonData>()
         val dtoData = JacksonUtils.objectMapper.readValue(message, ReqData::class.java).apply {
             this.playerId = commonData?.playerId ?: ""
-            this.roomId = commonData?.roomId ?: ""
+            if (this.roomId == "")
+                this.roomId = commonData?.roomId ?: ""
         }
         Dispatcher.dispatch(dtoData, conn)
     }
@@ -49,6 +50,6 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
     }
 
     override fun onStart() {
-        logger.info("GameServer start.")
+        logger.info("GameServer started at port {}", this.port)
     }
 }

@@ -1,57 +1,56 @@
 package jojo.game
 
+import com.sun.net.httpserver.HttpExchange
+import com.sun.net.httpserver.HttpHandler
+import com.sun.net.httpserver.HttpServer
+import jojo.game.constant.CommonHeaders
 import jojo.game.controller.LoginController
 import jojo.game.dto.ReqData
-import org.java_websocket.WebSocket
-import org.java_websocket.handshake.ClientHandshake
-import org.java_websocket.server.WebSocketServer
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 import java.net.InetSocketAddress
+import java.util.concurrent.Executors
 
-class AuthServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
+
+class AuthServer(private val port: Int) {
 
     private val logger = LoggerFactory.getLogger("AuthServer")
 
-    private val loginController = LoginController()
+    private val server = HttpServer.create(InetSocketAddress(this.port), 0)
 
-    /**
-     * Login
-     */
-    override fun onOpen(conn: WebSocket?, handshake: ClientHandshake?) {
-        if (handshake?.hasFieldValue("X-Username") == true && handshake.hasFieldValue("X-Password")) {
-            val username = handshake.getFieldValue("X-Username")
-            val password = handshake.getFieldValue("X-Password")
+    fun start() {
+        server.createContext("/login", LoginHandler())
+        server.executor = Executors.newFixedThreadPool(1)
+        server.start()
+        logger.info("AuthServer started at port $port")
+    }
+
+    fun stop() {
+        server.stop(0)
+    }
+
+    class LoginHandler : HttpHandler {
+
+        private val logger = LoggerFactory.getLogger("LoginHandler")
+
+        private val loginController = LoginController()
+        override fun handle(t: HttpExchange) {
+
+            val username = t.requestHeaders.getFirst(CommonHeaders.HEADER_USERNAME)
+            val password = t.requestHeaders.getFirst(CommonHeaders.HEADER_PASSWORD)
 
             val reqData = ReqData.LoginDTO().apply {
                 this.username = username
                 this.password = password
             }
-            loginController.login(reqData, conn)
+            val response = loginController.login(reqData)
 
-            logger.info("{}: Open connection.", conn?.remoteSocketAddress?.address?.hostAddress)
-            conn?.close()
-        } else {
-            logger.info("{}: Login failed, close.", conn?.remoteSocketAddress?.address?.hostAddress)
-            conn?.close()
+            t.sendResponseHeaders(200, response.length.toLong())
+
+            val os = t.responseBody
+            os.write(response.toByteArray())
+            os.close()
+
+            logger.info("LoginHandler: $username login success.")
         }
     }
-
-    override fun onClose(conn: WebSocket?, code: Int, reason: String?, remote: Boolean) {
-
-    }
-
-    override fun onMessage(conn: WebSocket?, message: String?) {
-
-    }
-
-    override fun onError(conn: WebSocket?, ex: Exception?) {
-        logger.error("Error: {}", ex?.message)
-    }
-
-    override fun onStart() {
-        logger.info("AuthServer started.")
-    }
-
-
 }

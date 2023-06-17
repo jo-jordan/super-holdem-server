@@ -9,7 +9,7 @@ import org.java_websocket.WebSocket
 import java.util.UUID
 
 class LoginController {
-    fun login(param: ReqData.LoginDTO, conn: WebSocket?) {
+    fun login(param: ReqData.LoginDTO): String {
 
         // TODO check username and password
 
@@ -19,10 +19,10 @@ class LoginController {
         }
         GameGlobal.playerMap[player.id] = player
 
-        conn?.send(JacksonUtils.objectMapper.writeValueAsString(
+        return JacksonUtils.objectMapper.writeValueAsString(
             RespData.LoginDTO().apply {
                 username = param.username
                 playerId = player.id
-            }))
+            })
     }
 }
