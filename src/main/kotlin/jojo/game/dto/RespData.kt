@@ -66,6 +66,7 @@ sealed class RespData {
         var cardList: List<Card> = listOf(),
         var winChips: Int = 0,
         var position: Position = Position.NONE,
+        var chips: Int = 0,
     ) : RespData()
 
     data class RoomInfoDTO(

@@ -70,8 +70,8 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     fun addPlayer(player: Player) {
-        playerList = playerList + player
         player.room = this
+        playerList = playerList + player
     }
 
     fun removePlayer(player: Player) {
@@ -183,6 +183,8 @@ class Room(val id: String = UUID.randomUUID().toString()) {
                 this.betAmount = it.getBetLog().sumOf { it.betAmount }
                 this.cardList = it.cardList
                 this.position = it.position
+                this.roomId = it.room?.id ?: ""
+                this.chips = it.getChipsAmount()
             }
         }
     }

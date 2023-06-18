@@ -8,8 +8,10 @@ import jojo.game.global.GameGlobal
 import jojo.game.state.RoomState
 import jojo.game.utils.JacksonUtils
 import org.java_websocket.WebSocket
+import org.slf4j.LoggerFactory
 
 class RoomController: Controller() {
+    private val logger = LoggerFactory.getLogger("RoomController")
     fun creatRoom(param: ReqData.RoomCreateDTO, conn: WebSocket?) {
         val room = Room().apply {
             this.name = param.name
@@ -21,6 +23,7 @@ class RoomController: Controller() {
 
         room.transitionTo(RoomState.RoomReadyState(room))
 
+        logger.info("player ${param.playerId} created room: ${room.id}")
         conn?.send(
             JacksonUtils.objectMapper.writeValueAsString(
                 RespData.RoomCreateDTO().apply {
@@ -38,9 +41,9 @@ class RoomController: Controller() {
                 room.addPlayer(player)
                 room.addPlayerConnection(param.playerId, conn)
 
-
-                broadcast(param.playerId, room.id, JacksonUtils.objectMapper.writeValueAsString(
-                    RespData.RoomCreateDTO().apply {
+                logger.info("player ${param.playerId} joined room: ${room.id}")
+                broadcast(room.id, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
+                    RespData.RoomJoinDTO().apply {
                         this.roomInfo = room.getRoomInfo()
                     }
                 ), true)
@@ -57,7 +60,8 @@ class RoomController: Controller() {
                 GameGlobal.roomMap.remove(param.roomId)
             }
 
-            broadcast(param.playerId, room.id, JacksonUtils.objectMapper.writeValueAsString(
+            logger.info("player ${param.playerId} left room: ${room.id}")
+            broadcast(room.id, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
                 RespData.RoomLeaveDTO().apply {
                     this.roomInfo = room.getRoomInfo()
                 }

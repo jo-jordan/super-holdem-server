@@ -5,9 +5,9 @@ import jojo.game.dto.ReqData
 import jojo.game.entity.Room
 import jojo.game.enums.BetType
 import jojo.game.enums.StageType
+import jojo.game.utils.CardUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.concurrent.timer
 
 sealed class RoomState(open val room: Room) {
 
@@ -15,11 +15,8 @@ sealed class RoomState(open val room: Room) {
 
     protected open var period: Long = 5000L
 
-    open fun enter() {
-        timer("PlayerStateTimer", false, 0, period) {
-            exit()
-        }
-    }
+    open fun enter() {}
+
     open fun exit() {}
 
     open fun update() {}
@@ -42,18 +39,19 @@ sealed class RoomState(open val room: Room) {
 
         override fun update() {
             if (room.getPlayerList().size == room.gameConfig.numToStart) {
-                exit()
+                room.transitionTo(RoomStartState(room))
             }
         }
 
         override fun exit() {
-            room.transitionTo(RoomStartState(room))
             logger.trace("Room has readied.")
         }
     }
 
     class RoomStartState(override val room: Room) : RoomState(room) {
         override fun enter() {
+            CardUtils.init()
+
             val reqData = ReqData.GameStartDTO().apply {
                 this.roomId = room.id
             }
@@ -75,12 +73,11 @@ sealed class RoomState(open val room: Room) {
                 this.roomId = room.id
             }
             Dispatcher.dispatch(reqData)
-            exit()
+
             logger.trace("Room is dealing player cards.")
         }
 
         override fun exit() {
-            room.transitionTo(RoomBettingState(room))
             logger.trace("Room has dealt player cards.")
         }
     }
@@ -94,7 +91,22 @@ sealed class RoomState(open val room: Room) {
 
         override fun update() {
             if (checkBetsEqual()) {
-                exit()
+                when (room.stage) {
+                    StageType.BET_AFTER_DEAL_PLAYER_CARDS -> {
+                        room.transitionTo(RoomDealFlopCardsState(room))
+                    }
+                    StageType.BET_AFTER_DEAL_FLOP_CARDS -> {
+                        room.transitionTo(RoomDealTurnCardState(room))
+                    }
+                    StageType.BET_AFTER_DEAL_TURN_CARDS -> {
+                        room.transitionTo(RoomDealRiverCardState(room))
+                    }
+                    StageType.BET_AFTER_DEAL_RIVER_CARDS -> {
+                        room.transitionTo(RoomEndState(room))
+                    }
+
+                    else -> {}
+                }
             } else {
                 continueCurrentRound()
             }
@@ -121,15 +133,6 @@ sealed class RoomState(open val room: Room) {
         }
 
         override fun exit() {
-            if (room.stage == StageType.BET_AFTER_DEAL_PLAYER_CARDS) {
-                room.transitionTo(RoomDealFlopCardsState(room))
-            } else if (room.stage == StageType.BET_AFTER_DEAL_FLOP_CARDS) {
-                room.transitionTo(RoomDealTurnCardState(room))
-            } else if (room.stage == StageType.BET_AFTER_DEAL_TURN_CARDS) {
-                room.transitionTo(RoomDealRiverCardState(room))
-            } else if (room.stage == StageType.BET_AFTER_DEAL_RIVER_CARDS) {
-                room.transitionTo(RoomEndState(room))
-            }
 
             room.betRound++
 
