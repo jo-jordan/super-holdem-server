@@ -40,3 +40,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Ignore generated kubeconfig from google-github-actions/get-gke-credentials
+gha-kubeconfig-*
