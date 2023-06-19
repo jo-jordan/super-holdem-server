@@ -16,11 +16,11 @@ spec:
     - IPv4
   ipFamilyPolicy: SingleStack
   ports:
-    - name: Game Server
+    - name: game-server
       port: 8888
       protocol: TCP
       targetPort: 8888
-    - name: Auth Server
+    - name: auth-server
       port: 8887
       protocol: TCP
       targetPort: 8887
