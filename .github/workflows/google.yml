@@ -46,7 +46,7 @@ jobs:
         with:
           token_format: 'access_token'
           workload_identity_provider: 'projects/172710103535/locations/global/workloadIdentityPools/github-identity-pool/providers/github-provider'
-          service_account: 'github-service-account@my-project.iam.gserviceaccount.com'
+          service_account: 'github-service-account@battle-of-dawn-break.iam.gserviceaccount.com'
 
       - name: Docker configuration
         run: |-
