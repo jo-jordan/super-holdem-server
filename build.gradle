@@ -43,9 +43,26 @@ test {
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 application {
     mainClassName = 'MainKt'
+}
+
+tasks.register('uberJar', Jar) {
+    archiveClassifier = 'uber'
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes["Main-Class"] = "MainKt"
+    }
+
+    from sourceSets.main.output
+
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
 }
