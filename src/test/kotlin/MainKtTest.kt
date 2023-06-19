@@ -11,8 +11,8 @@ import jojo.game.utils.CardUtils
 import jojo.game.utils.JacksonUtils
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.util.concurrent.CountDownLatch
@@ -30,23 +30,19 @@ class MainKtTest {
     companion object {
         private val authServer = AuthServer(8887)
         private val gameServer = GameServer(8888)
-        @JvmStatic
-        @BeforeAll
-        @Order(1)
+
         fun start_server() {
             authServer.start()
             gameServer.start()
         }
 
-        @JvmStatic
-        @AfterAll
+
         fun stop_server() {
             authServer.stop()
             gameServer.stop()
         }
     }
 
-    @BeforeEach
     fun login_should_work() {
         if (loginResult != null) return
         val countDownLatch = CountDownLatch(1)
@@ -115,7 +111,7 @@ class MainKtTest {
     }
 
 
-    @Test
+
     fun player_create_room_should_work() {
         var result = sendAndGetResult(JacksonUtils.objectMapper.writeValueAsString(ReqData.RoomCreateDTO().apply { this.name = "TestRoom" }))
         assertTrue(result is RespData.RoomCreateDTO)
@@ -127,7 +123,6 @@ class MainKtTest {
         assertTrue(roomSearchResult.roomList[0].roomName == "TestRoom")
     }
 
-    @Test
     fun player_leave_should_work() {
         var result = sendAndGetResult(JacksonUtils.objectMapper.writeValueAsString(ReqData.RoomCreateDTO().apply { this.name = "TestRoom" }))
         assertTrue(result is RespData.RoomCreateDTO)
@@ -142,12 +137,12 @@ class MainKtTest {
         assertTrue(result is RespData.RoomLeaveDTO)
     }
 
-    @Test
+
     fun player_ready_should_work() {
         sendAndGetResult(JacksonUtils.objectMapper.writeValueAsString(ReqData.GameReadyDTO()))
     }
 
-    @Test
+
     fun player_enter_room_should_ready() {
         val room = Room()
         room.transitionTo(RoomState.RoomInitState(room))
@@ -165,7 +160,6 @@ class MainKtTest {
         assertTrue(room.getPlayerList().isEmpty())
     }
 
-    @Test
     fun simple_coverage() {
         CardUtils.init()
         CardUtils.shuffle()
