@@ -20,7 +20,7 @@ env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   GAR_LOCATION: asia-northeast1 # TODO: update region of the Artifact Registry
   GKE_CLUSTER: super-holdem    # TODO: update to cluster name
-  GKE_ZONE: asia-northeast1-a   # TODO: update to cluster zone
+  GKE_ZONE: asia-northeast1   # TODO: update to cluster zone
   DEPLOYMENT_NAME: super-holdem-sever # TODO: update to deployment name
   REPOSITORY: docker-repo # TODO: update to Artifact Registry docker repository
   IMAGE: super-holdem-sever
