@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
+  labels:
+    app: super-holdem-server
+  name: super-holdem-server-service
+  namespace: super-holdem
+spec:
+  clusterIP: 10.120.2.6
+  clusterIPs:
+    - 10.120.2.6
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: Game Server
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+    - name: Auth Server
+      port: 8887
+      protocol: TCP
+      targetPort: 8887
+  selector:
+    app: super-holdem-server
+  sessionAffinity: None
+  type: ClusterIP
