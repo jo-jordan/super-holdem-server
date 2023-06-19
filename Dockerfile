@@ -4,10 +4,6 @@ FROM gradle:8.1.1-jdk17 as builder
 # 设置工作目录
 WORKDIR /app
 
-# 复制gradle的wrapper文件
-COPY gradlew .
-COPY gradle gradle
-
 # 复制项目的构建文件
 COPY build.gradle .
 COPY settings.gradle .
@@ -16,7 +12,7 @@ COPY settings.gradle .
 COPY src src
 
 # 运行构建命令
-RUN ./gradlew build
+RUN gradle uberJar
 
 # 开始第二个阶段，使用OpenJDK镜像
 FROM openjdk:17-jdk
