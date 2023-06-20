@@ -81,13 +81,14 @@ class GameController: Controller() {
 
     fun dealTurnCard(param: ReqData.GameDealTurnCardsDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
-        room.cards += listOf(CardUtils.dealCard())
+        val card = listOf(CardUtils.dealCard())
+        room.cards += card
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
             RespData.GameDealTurnCardsDTO().apply {
                 this.playerId = param.playerId
                 this.roomId = param.roomId
-                this.cards = room.cards
+                this.cards = card
             }
         ), true)
 
@@ -97,13 +98,14 @@ class GameController: Controller() {
 
     fun dealRiverCard(param: ReqData.GameDealRiverCardsDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
-        room.cards += listOf(CardUtils.dealCard())
+        val card = listOf(CardUtils.dealCard())
+        room.cards += card
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
             RespData.GameDealRiverCardsDTO().apply {
                 this.playerId = param.playerId
                 this.roomId = param.roomId
-                this.cards = room.cards
+                this.cards = card
             }
         ), true)
 
@@ -166,6 +168,8 @@ class GameController: Controller() {
                 // TODO
             }
         }
+        room.lastBetPlayer = room.nextToBetPlayer
+        room.nextToBetPlayer = room.nextToBetPlayer?.nextPlayer
         room.updateState()
     }
 
