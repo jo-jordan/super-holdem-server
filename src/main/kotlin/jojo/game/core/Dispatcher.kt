@@ -28,7 +28,7 @@ object Dispatcher {
                 roomController.joinRoom(data as ReqData.RoomJoinDTO, conn)
             }
             DataType.ROOM_LEAVE -> {
-                roomController.leaveRoom(data as ReqData.RoomLeaveDTO, conn)
+                roomController.leaveRoom(data as ReqData.RoomLeaveDTO)
             }
             DataType.ROOM_SEARCH -> {
                 roomController.searchRoom(data as ReqData.RoomSearchDTO, conn)

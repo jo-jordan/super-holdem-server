@@ -4,6 +4,7 @@ import jojo.game.core.Dispatcher
 import jojo.game.dto.ReqData
 import jojo.game.entity.Room
 import jojo.game.enums.BetType
+import jojo.game.enums.Position
 import jojo.game.enums.StageType
 import jojo.game.utils.CardUtils
 import org.slf4j.Logger
@@ -57,8 +58,6 @@ sealed class RoomState(open val room: Room) {
             }
             Dispatcher.dispatch(reqData)
 
-            room.updateRound()
-
             logger.trace("Room is starting.")
         }
 
@@ -85,6 +84,9 @@ sealed class RoomState(open val room: Room) {
     class RoomBettingState(override val room: Room) : RoomState(room) {
 
         override fun enter() {
+            room.getPlayerList().forEach {
+                it.transitionTo(PlayerState.PlayerWaitingState(it))
+            }
             logger.trace("Room is betting.")
             continueCurrentRound()
         }
@@ -113,29 +115,42 @@ sealed class RoomState(open val room: Room) {
         }
 
         private fun continueCurrentRound() {
-            if (room.nextToBetPlayer == null) {
-                room.nextToBetPlayer = room.getPlayerList().first()
-                room.updateBetTypes(listOf(BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+            // update nextToBetPlayer to the next active player
+
+            if (room.nextToBetPlayer?.position == Position.BIG_BLIND && room.betRound == 0) {
+                room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
             } else {
                 if (room.lastBetPlayer?.getBetLog()?.last()?.betType == BetType.CHECK) {
                     room.updateBetTypes(listOf(BetType.CALL, BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
                 } else {
                     room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
                 }
-
             }
+
+            // update player state to betting
             room.nextToBetPlayer?.transitionTo(PlayerState.PlayerBettingState(room.nextToBetPlayer!!))
         }
 
         private fun checkBetsEqual(): Boolean {
-            val maxBet = room.getPlayerList().maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } }
-            return room.getPlayerList().all { player -> player.getBetLog().sumOf { it.betAmount } == maxBet }
+            val activePlayers = room.getPlayerList().filter { !it.isFold }
+            val maxBet = activePlayers.maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } }
+
+            // 额外的条件，用于检查当前的下注玩家是否为大盲位玩家
+            if (room.betRound == 0 && room.lastBetPlayer?.position != Position.BIG_BLIND) {
+                return false
+            }
+
+            return activePlayers.all { player ->
+                player.getBetLog().last().betRound == room.betRound && player.getBetLog().sumOf { it.betAmount } == maxBet
+            }
         }
 
         override fun exit() {
 
             room.betRound++
-
+            if (room.betRound > 0) {  // after the first round
+                room.nextToBetPlayer = room.getPlayerList().find { it.position == Position.SMALL_BLIND }
+            }
             logger.trace("Room has bet.")
         }
     }
@@ -151,7 +166,6 @@ sealed class RoomState(open val room: Room) {
 
         override fun exit() {
             logger.trace("Room has dealt flop cards.")
-            room.transitionTo(RoomBettingState(room))
         }
     }
 

@@ -32,7 +32,9 @@ class GameController: Controller() {
     fun start(param: ReqData.GameStartDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
 
-        broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(RespData.GameStartDTO()))
+        room.updateRound()
+
+        sentRoomInfoToAll(room)
 
         room.transitionTo(RoomState.RoomDealPlayerCardsState(room))
     }
@@ -79,13 +81,14 @@ class GameController: Controller() {
 
     fun dealTurnCard(param: ReqData.GameDealTurnCardsDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
-        room.cards += listOf(CardUtils.dealCard())
+        val card = listOf(CardUtils.dealCard())
+        room.cards += card
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
             RespData.GameDealTurnCardsDTO().apply {
                 this.playerId = param.playerId
                 this.roomId = param.roomId
-                this.cards = room.cards
+                this.cards = card
             }
         ), true)
 
@@ -95,13 +98,14 @@ class GameController: Controller() {
 
     fun dealRiverCard(param: ReqData.GameDealRiverCardsDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
-        room.cards += listOf(CardUtils.dealCard())
+        val card = listOf(CardUtils.dealCard())
+        room.cards += card
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
             RespData.GameDealRiverCardsDTO().apply {
                 this.playerId = param.playerId
                 this.roomId = param.roomId
-                this.cards = room.cards
+                this.cards = card
             }
         ), true)
 
@@ -115,20 +119,21 @@ class GameController: Controller() {
     fun updateBet(param: ReqData.GameUpdateBetDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
 
-        val respData = RespData.GameUpdateBetDTO().apply {
-            this.playerId = param.playerId
-            this.roomId = param.roomId
-        }
-
         room.getPlayerList().forEach {
+            val respData = RespData.GameUpdateBetDTO().apply {
+                this.playerId = param.playerId
+                this.roomId = param.roomId
+            }
+
             if (it.isFold || it.state is PlayerState.PlayerWaitingState) {
                 respData.operationList[it.id] = listOf()
             } else {
                 respData.operationList[it.id] = room.getBetTypes()
             }
-        }
+            respData.roomInfo = room.getRoomInfo(it.id)
 
-        broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(respData), true)
+            sendTo(param.roomId, it.id, JacksonUtils.objectMapper.writeValueAsString(respData))
+        }
     }
 
     fun bet(param: ReqData.GameBetDTO) {
@@ -163,6 +168,8 @@ class GameController: Controller() {
                 // TODO
             }
         }
+        room.lastBetPlayer = room.nextToBetPlayer
+        room.nextToBetPlayer = room.nextToBetPlayer?.nextPlayer
         room.updateState()
     }
 

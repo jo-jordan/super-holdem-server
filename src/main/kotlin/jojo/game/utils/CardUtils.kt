@@ -14,9 +14,15 @@ object CardUtils {
     // Initialize the card list
     fun init() {
         cardList.clear()
-        var cardId = 0
+        var cardId = 1
         for (color in CardColor.values()) {
-            for (value in 2..14) {
+            // for Ace
+            val ace = Card(cardId, 14, color)
+            cardList.add(ace)
+            cardId++
+
+            // for 2-13
+            for (value in 2..13) {
                 val card = Card(cardId, value, color)
                 cardList.add(card)
                 cardId++
@@ -24,6 +30,7 @@ object CardUtils {
         }
         shuffle()
     }
+
 
     fun shuffle() {
         cardList.shuffle()

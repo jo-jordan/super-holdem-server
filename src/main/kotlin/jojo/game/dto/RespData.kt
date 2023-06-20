@@ -109,6 +109,7 @@ sealed class RespData {
     data class GameUpdateBetDTO(
         override var type: DataType = DataType.GAME_UPDATE_BET,
         var operationList: MutableMap<String, List<BetType>> = mutableMapOf(),
+        var roomInfo: RoomInfoDTO = RoomInfoDTO(),
     ) : RespData()
 
     data class GameResultDTO(

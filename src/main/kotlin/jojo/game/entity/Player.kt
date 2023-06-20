@@ -4,6 +4,10 @@ import jojo.game.enums.CardType
 import jojo.game.enums.Position
 import jojo.game.state.PlayerState
 import jojo.game.utils.CardUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+val logger: Logger = LoggerFactory.getLogger("Player")
 
 class Player {
     var state: PlayerState? = null
@@ -19,7 +23,7 @@ class Player {
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())
     var cardsToCalculate = emptyList<Card>()
     var isFold = false
-    private var chipsAmount : Int = 0
+    private var chipsAmount : Int = 100000
 
     private var betLog: List<BetLog> = mutableListOf()
 
@@ -33,6 +37,7 @@ class Player {
 
     fun updateChips(amount: Int) {
         chipsAmount += amount
+        logger.info("Player[{}, {}] chips amount: {}, diff: {}", name, id, chipsAmount, amount)
     }
 
     fun addBetLog(log: BetLog) {
@@ -46,8 +51,9 @@ class Player {
             return
         }
         this.state?.exit()
-        state.enter()
+
         this.state = state
+        state.enter()
     }
 
     fun updateState() {
