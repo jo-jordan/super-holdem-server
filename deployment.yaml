@@ -1,11 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    autopilot.gke.io/resource-adjustment: '{"input":{"containers":[{"name":"super-holdem-server-1"}]},"output":{"containers":[{"limits":{"cpu":"500m","ephemeral-storage":"1Gi","memory":"2Gi"},"requests":{"cpu":"500m","ephemeral-storage":"1Gi","memory":"2Gi"},"name":"super-holdem-server-1"}]},"modified":true}'
-    deployment.kubernetes.io/revision: "2"
-  labels:
-    app: super-holdem-server
   name: super-holdem-server
   namespace: super-holdem
 spec:
@@ -21,14 +16,10 @@ spec:
       maxUnavailable: 25%
     type: RollingUpdate
   template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: super-holdem-server
     spec:
       containers:
-        - image: asia-northeast1-docker.pkg.dev/battle-of-dawn-break/docker-repo/super-holdem-server:9ef07f9ef8f36bfa914569bb8a52de22cdfd14fb
-          imagePullPolicy: IfNotPresent
+        - image: asia-northeast1-docker.pkg.dev/battle-of-dawn-break/docker-repo/super-holdem-server:latest
+          imagePullPolicy: Always
           name: super-holdem-server-1
           resources:
             limits:
