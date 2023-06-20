@@ -18,6 +18,7 @@ class AuthServer(private val port: Int) {
     private val server = HttpServer.create(InetSocketAddress(this.port), 0)
 
     fun start() {
+        server.createContext("/", HealthCheckHandler())
         server.createContext("/login", LoginHandler())
         server.executor = Executors.newFixedThreadPool(1)
         server.start()
@@ -26,6 +27,19 @@ class AuthServer(private val port: Int) {
 
     fun stop() {
         server.stop(0)
+    }
+
+    class HealthCheckHandler : HttpHandler {
+        private val logger = LoggerFactory.getLogger("HealthCheckHandler")
+        override fun handle(t: HttpExchange) {
+            val response = "OK"
+            t.sendResponseHeaders(200, response.length.toLong())
+
+            val os = t.responseBody
+            os.write(response.toByteArray())
+            os.close()
+            logger.info("HealthCheckHandler: Health check success.")
+        }
     }
 
     class LoginHandler : HttpHandler {
