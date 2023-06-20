@@ -4,6 +4,7 @@ import jojo.game.constant.CommonHeaders
 import jojo.game.core.Dispatcher
 import jojo.game.dto.CommonData
 import jojo.game.dto.ReqData
+import jojo.game.global.GameGlobal
 import jojo.game.utils.JacksonUtils
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -33,6 +34,21 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
 
     override fun onClose(conn: WebSocket?, code: Int, reason: String?, remote: Boolean) {
         logger.info("{}: Close connection.", conn?.remoteSocketAddress?.address?.hostAddress)
+
+        val commonData = conn?.getAttachment<CommonData>()
+
+        val player = GameGlobal.playerMap[commonData?.playerId]
+
+        commonData?.roomId?.let { roomId ->
+            player?.let {
+                GameGlobal.roomMap[roomId]?.removePlayer(player)
+                GameGlobal.roomConnections[roomId]?.remove(player.id)
+            }
+        }
+
+        commonData?.playerId?.let { playerId ->
+            GameGlobal.playerMap.remove(playerId)
+        }
     }
 
     override fun onMessage(conn: WebSocket?, message: String?) {
