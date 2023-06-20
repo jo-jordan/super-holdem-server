@@ -21,7 +21,7 @@ spec:
         app: super-holdem-server
     spec:
       containers:
-        - image: asia-northeast1-docker.pkg.dev/battle-of-dawn-break/docker-repo/super-holdem-server:latest
+        - image: LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG
           imagePullPolicy: Always
           name: super-holdem-server-1
           resources:
