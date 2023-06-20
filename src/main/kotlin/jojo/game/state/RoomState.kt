@@ -4,6 +4,7 @@ import jojo.game.core.Dispatcher
 import jojo.game.dto.ReqData
 import jojo.game.entity.Room
 import jojo.game.enums.BetType
+import jojo.game.enums.Position
 import jojo.game.enums.StageType
 import jojo.game.utils.CardUtils
 import org.slf4j.Logger
@@ -124,11 +125,23 @@ sealed class RoomState(open val room: Room) {
                     room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
                 }
 
+                if (room.nextToBetPlayer?.position == Position.BIG_BLIND && room.betRound == 0) {
+                    room.betRound++
+                    room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                }
+
+                if (room.betRound >= 2) {
+                    room.getPlayerList().first { (it.position == Position.SMALL_BLIND && !it.isFold) || !it.isFold }.let {
+                        room.lastBetPlayer = room.nextToBetPlayer
+                        room.nextToBetPlayer = it
+                    }
+                }
             }
             room.nextToBetPlayer?.transitionTo(PlayerState.PlayerBettingState(room.nextToBetPlayer!!))
         }
 
         private fun checkBetsEqual(): Boolean {
+            if (room.nextToBetPlayer?.position == Position.BIG_BLIND && room.betRound == 0) return false
             val maxBet = room.getPlayerList().maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } }
             return room.getPlayerList().all { player -> player.getBetLog().sumOf { it.betAmount } == maxBet }
         }
@@ -152,7 +165,6 @@ sealed class RoomState(open val room: Room) {
 
         override fun exit() {
             logger.trace("Room has dealt flop cards.")
-            room.transitionTo(RoomBettingState(room))
         }
     }
 

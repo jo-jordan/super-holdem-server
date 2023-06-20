@@ -23,10 +23,7 @@ abstract class Controller {
         room.getPlayerList().forEach { p ->
             sendTo(room.id, p.id, JacksonUtils.objectMapper.writeValueAsString(
                 RespData.RoomJoinDTO().apply {
-                    val roomInfo = room.getRoomInfo()
-
-                    roomInfo.playerInfoList = roomInfo.playerInfoList.rotate{ it.playerId == p.id }
-
+                    val roomInfo = room.getRoomInfo(p.id)
                     this.roomInfo = roomInfo
                 }
             ))

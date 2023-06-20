@@ -1,5 +1,6 @@
 package jojo.game.entity
 
+import jojo.game.core.rotate
 import jojo.game.dto.RespData
 import jojo.game.enums.BetType
 import jojo.game.enums.Position
@@ -9,6 +10,7 @@ import jojo.game.state.RoomState
 import jojo.game.utils.CardUtils
 import org.java_websocket.WebSocket
 import java.util.*
+import kotlin.math.absoluteValue
 
 class Room(val id: String = UUID.randomUUID().toString()) {
     private var playerList: List<Player> = mutableListOf()
@@ -123,8 +125,14 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     private fun blindFirstBet() {
-        playerList.find { it.position == Position.SMALL_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.smallBlind))
-        playerList.find { it.position == Position.BIG_BLIND }?.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.bigBlind))
+        playerList.find { it.position == Position.SMALL_BLIND }?.let {
+            it.updateChips(-gameConfig.smallBlind)
+            it.addBetLog(BetLog(this.betRound, BetType.NONE, -gameConfig.smallBlind))
+        }
+        playerList.find { it.position == Position.BIG_BLIND }?.let {
+            it.updateChips(-gameConfig.bigBlind)
+            it.addBetLog(BetLog(this.betRound, BetType.NONE, -gameConfig.bigBlind))
+        }
     }
 
     private fun updatePlayerPosition() {
@@ -165,8 +173,9 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         }
     }
 
-    fun getRoomInfo(): RespData.RoomInfoDTO {
-        val playerInfoList = getPlayerInfoList()
+    fun getRoomInfo(playerId: String): RespData.RoomInfoDTO {
+        var playerInfoList = getPlayerInfoList()
+        playerInfoList = playerInfoList.rotate{ pi -> pi.playerId == playerId }
         val roomBet = playerInfoList.sumOf { it.betAmount }
         return RespData.RoomInfoDTO().apply {
             this.roomId = id
@@ -195,7 +204,9 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     fun recordCall() {
-        val callScore = lastBetPlayer?.getBetLog()?.lastOrNull()?.betAmount ?: 0
+        val callScore = (lastBetPlayer?.getBetLog()?.lastOrNull()?.betAmount?.absoluteValue ?: 0) -
+                (nextToBetPlayer?.getBetLog()?.lastOrNull()?.betAmount?.absoluteValue ?: 0)
+
         nextToBetPlayer?.updateChips(-callScore)
         nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, -callScore))
     }

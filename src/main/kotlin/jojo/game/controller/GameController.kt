@@ -117,20 +117,21 @@ class GameController: Controller() {
     fun updateBet(param: ReqData.GameUpdateBetDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
 
-        val respData = RespData.GameUpdateBetDTO().apply {
-            this.playerId = param.playerId
-            this.roomId = param.roomId
-        }
-
         room.getPlayerList().forEach {
+            val respData = RespData.GameUpdateBetDTO().apply {
+                this.playerId = param.playerId
+                this.roomId = param.roomId
+            }
+
             if (it.isFold || it.state is PlayerState.PlayerWaitingState) {
                 respData.operationList[it.id] = listOf()
             } else {
                 respData.operationList[it.id] = room.getBetTypes()
             }
-        }
+            respData.roomInfo = room.getRoomInfo(it.id)
 
-        broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(respData), true)
+            sendTo(param.roomId, it.id, JacksonUtils.objectMapper.writeValueAsString(respData))
+        }
     }
 
     fun bet(param: ReqData.GameBetDTO) {

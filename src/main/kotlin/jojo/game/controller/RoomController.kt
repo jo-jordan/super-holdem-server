@@ -27,7 +27,7 @@ class RoomController: Controller() {
         conn?.send(
             JacksonUtils.objectMapper.writeValueAsString(
                 RespData.RoomCreateDTO().apply {
-                    this.roomInfo = room.getRoomInfo()
+                    this.roomInfo = room.getRoomInfo(param.playerId)
                 })
         )
     }
@@ -47,7 +47,7 @@ class RoomController: Controller() {
         }
     }
 
-    fun leaveRoom(param: ReqData.RoomLeaveDTO, conn: WebSocket?) {
+    fun leaveRoom(param: ReqData.RoomLeaveDTO) {
         if (GameGlobal.roomMap.contains(param.roomId)) {
             val room = GameGlobal.roomMap.getValue(param.roomId)
             room.removePlayerById(param.playerId)
