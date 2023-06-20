@@ -14,7 +14,7 @@ object CardUtils {
     // Initialize the card list
     fun init() {
         cardList.clear()
-        var cardId = 0
+        var cardId = 1
         for (color in CardColor.values()) {
             for (value in 2..14) {
                 val card = Card(cardId, value, color)

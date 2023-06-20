@@ -19,7 +19,7 @@ class Player {
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())
     var cardsToCalculate = emptyList<Card>()
     var isFold = false
-    private var chipsAmount : Int = 0
+    private var chipsAmount : Int = 100000
 
     private var betLog: List<BetLog> = mutableListOf()
 
@@ -46,8 +46,9 @@ class Player {
             return
         }
         this.state?.exit()
-        state.enter()
+
         this.state = state
+        state.enter()
     }
 
     fun updateState() {

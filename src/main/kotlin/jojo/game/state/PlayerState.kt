@@ -47,11 +47,11 @@ sealed class PlayerState(open val player: Player) {
     class PlayerReadyState(override val player: Player) : PlayerState(player) {
         override fun enter() {
             player.ready = true
-            logger.info("Player[{}] is ready.", player.id)
+            logger.info("Player[{}, {}] is ready.", player.name, player.id)
         }
 
         override fun exit() {
-            logger.info("Player[{}] has readied.", player.id)
+            logger.info("Player[{}, {}] has readied.", player.name, player.id)
         }
     }
 
@@ -61,11 +61,11 @@ sealed class PlayerState(open val player: Player) {
             player.room?.lastBetPlayer = player
             player.room?.nextToBetPlayer = player.nextPlayer
 
-            logger.info("Player[{}] is waiting.", player.id)
+            logger.info("Player[{}, {}] is waiting.", player.name, player.id)
         }
 
         override fun exit() {
-            logger.info("Player[{}] has waited.", player.id)
+            logger.info("Player[{}, {}] has waited.", player.name, player.id)
         }
 
     }
@@ -77,11 +77,11 @@ sealed class PlayerState(open val player: Player) {
                 this.playerId = player.id
             }
             Dispatcher.dispatch(reqData)
-            logger.info("Player[{}] is betting.", player.id)
+            logger.info("Player[{}, {}] is betting.", player.name, player.id)
         }
 
         override fun exit() {
-            logger.info("Player[{}] has bet.", player.id)
+            logger.info("Player[{}, {}] has bet.", player.name, player.id)
         }
     }
 

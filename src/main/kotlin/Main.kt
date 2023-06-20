@@ -10,6 +10,4 @@ fun main(args: Array<String>) {
 
     authServer.start()
     gameServer.start()
-
-
 }

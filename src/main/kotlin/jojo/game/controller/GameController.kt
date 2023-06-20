@@ -32,7 +32,9 @@ class GameController: Controller() {
     fun start(param: ReqData.GameStartDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
 
-        broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(RespData.GameStartDTO()))
+        room.updateRound()
+
+        sentRoomInfoToAll(room)
 
         room.transitionTo(RoomState.RoomDealPlayerCardsState(room))
     }

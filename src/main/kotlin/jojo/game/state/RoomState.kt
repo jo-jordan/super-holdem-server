@@ -57,8 +57,6 @@ sealed class RoomState(open val room: Room) {
             }
             Dispatcher.dispatch(reqData)
 
-            room.updateRound()
-
             logger.trace("Room is starting.")
         }
 
@@ -85,6 +83,9 @@ sealed class RoomState(open val room: Room) {
     class RoomBettingState(override val room: Room) : RoomState(room) {
 
         override fun enter() {
+            room.getPlayerList().forEach {
+                it.transitionTo(PlayerState.PlayerWaitingState(it))
+            }
             logger.trace("Room is betting.")
             continueCurrentRound()
         }

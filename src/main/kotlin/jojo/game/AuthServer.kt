@@ -38,7 +38,6 @@ class AuthServer(private val port: Int) {
             val os = t.responseBody
             os.write(response.toByteArray())
             os.close()
-            logger.info("HealthCheckHandler: Health check success.")
         }
     }
 

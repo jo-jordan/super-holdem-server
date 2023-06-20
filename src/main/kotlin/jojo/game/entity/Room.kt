@@ -44,9 +44,10 @@ class Room(val id: String = UUID.randomUUID().toString()) {
             return
         }
         this.state?.exit()
-        state.enter()
-        this.state = state
         this.lastStateName = state.javaClass.simpleName
+
+        this.state = state
+        state.enter()
     }
 
     fun updateBetTypes(types: List<BetType>) {
@@ -194,7 +195,7 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     fun recordCall() {
-        val callScore = lastBetPlayer?.getBetLog()?.last()?.betAmount ?: 0
+        val callScore = lastBetPlayer?.getBetLog()?.lastOrNull()?.betAmount ?: 0
         nextToBetPlayer?.updateChips(-callScore)
         nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, -callScore))
     }

@@ -55,8 +55,12 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
         val commonData = conn?.getAttachment<CommonData>()
         val dtoData = JacksonUtils.objectMapper.readValue(message, ReqData::class.java).apply {
             this.playerId = commonData?.playerId ?: ""
-            if (this.roomId == "")
+            if (this.roomId == "") {
                 this.roomId = commonData?.roomId ?: ""
+                commonData?.roomId = this.roomId
+                conn?.setAttachment(commonData)
+            }
+
         }
         Dispatcher.dispatch(dtoData, conn)
     }
