@@ -6,9 +6,6 @@ metadata:
   name: super-holdem-server-service
   namespace: super-holdem
 spec:
-  clusterIP: 10.120.2.6
-  clusterIPs:
-    - 10.120.2.6
   internalTrafficPolicy: Cluster
   ipFamilies:
     - IPv4
@@ -25,4 +22,4 @@ spec:
   selector:
     app: super-holdem-server
   sessionAffinity: None
-  type: ClusterIP
+  type: NodePort
