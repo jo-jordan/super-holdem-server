@@ -16,6 +16,9 @@ spec:
       maxUnavailable: 25%
     type: RollingUpdate
   template:
+    metadata:
+      labels:
+        app: super-holdem-server
     spec:
       containers:
         - image: asia-northeast1-docker.pkg.dev/battle-of-dawn-break/docker-repo/super-holdem-server:latest
