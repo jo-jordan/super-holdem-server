@@ -15,10 +15,12 @@ spec:
       port: 8888
       protocol: TCP
       targetPort: 8888
+      nodePort: 30088
     - name: auth-server
       port: 8887
       protocol: TCP
       targetPort: 8887
+      nodePort: 30087
   selector:
     app: super-holdem-server
   sessionAffinity: None
