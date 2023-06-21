@@ -42,7 +42,15 @@ class RoomController: Controller() {
                 room.addPlayerConnection(param.playerId, conn)
 
                 logger.info("player ${param.playerId} joined room: ${room.id}")
-                sentRoomInfoToAll(room)
+
+                room.getPlayerList().forEach { p ->
+                    sendTo(room.id, p.id, JacksonUtils.objectMapper.writeValueAsString(
+                        RespData.RoomJoinDTO().apply {
+                            val roomInfo = room.getRoomInfo(p.id)
+                            this.roomInfo = roomInfo
+                        }
+                    ))
+                }
             }
         }
     }
@@ -57,7 +65,14 @@ class RoomController: Controller() {
             }
 
             logger.info("player ${param.playerId} left room: ${room.id}")
-            sentRoomInfoToAll(room)
+            room.getPlayerList().forEach { p ->
+                sendTo(room.id, p.id, JacksonUtils.objectMapper.writeValueAsString(
+                    RespData.RoomLeaveDTO().apply {
+                        val roomInfo = room.getRoomInfo(p.id)
+                        this.roomInfo = roomInfo
+                    }
+                ))
+            }
         }
     }
 

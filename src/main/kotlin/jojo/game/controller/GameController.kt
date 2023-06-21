@@ -10,6 +10,8 @@ import jojo.game.state.PlayerState
 import jojo.game.state.RoomState
 import jojo.game.utils.CardUtils
 import jojo.game.utils.JacksonUtils
+import java.util.*
+import kotlin.concurrent.schedule
 
 /**
  * Game controller
@@ -32,9 +34,16 @@ class GameController: Controller() {
     fun start(param: ReqData.GameStartDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
 
-        room.updateRound()
+        room.beforeRound()
 
-        sentRoomInfoToAll(room)
+        room.getPlayerList().forEach { p ->
+            sendTo(room.id, p.id, JacksonUtils.objectMapper.writeValueAsString(
+                RespData.GameStartDTO().apply {
+                    val roomInfo = room.getRoomInfo(p.id)
+                    this.roomInfo = roomInfo
+                }
+            ))
+        }
 
         room.transitionTo(RoomState.RoomDealPlayerCardsState(room))
     }
@@ -168,8 +177,8 @@ class GameController: Controller() {
                 // TODO
             }
         }
-        room.lastBetPlayer = room.nextToBetPlayer
-        room.nextToBetPlayer = room.nextToBetPlayer?.nextPlayer
+        room.lastBetPlayer = room.currentBetPlayer
+        room.currentBetPlayer = room.currentBetPlayer?.nextPlayer
         room.updateState()
     }
 
@@ -178,7 +187,7 @@ class GameController: Controller() {
         room.calculateWinner()
         val leaderboard =  room.getLeaderboard()
 
-        val playerInfoList = leaderboard.map {p ->
+        val playerInfoList = leaderboard.map { p ->
             RespData.PlayerInfoDTO().apply {
                 this.playerId = p.id
                 this.cardList = p.cardList
@@ -193,5 +202,12 @@ class GameController: Controller() {
         }
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(respData), true)
+
+
+        if (room.round < room.gameConfig.maxRound) {
+            Timer("schedule", true).schedule(5000) {
+                room.transitionTo(RoomState.RoomStartState(room))
+            }
+        }
     }
 }

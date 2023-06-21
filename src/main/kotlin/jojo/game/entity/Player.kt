@@ -69,4 +69,13 @@ class Player {
 
         return this.maxCardType
     }
+
+    fun reset() {
+        cardList = mutableListOf()
+        isFold = false
+        chipsAmount = 100000
+        betLog = mutableListOf()
+        cardsToCalculate = emptyList()
+        maxCardType = Pair(CardType.NONE, emptyList())
+    }
 }

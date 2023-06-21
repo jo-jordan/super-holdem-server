@@ -23,7 +23,7 @@ class Room(val id: String = UUID.randomUUID().toString()) {
 
     var betRound: Int = 0
     var lastBetPlayer: Player? = null
-    var nextToBetPlayer: Player? = null
+    var currentBetPlayer: Player? = null
     var totalScore: Int = 0
     var stage: StageType = StageType.BET_AFTER_DEAL_PLAYER_CARDS
 
@@ -115,10 +115,13 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         this.cards = mutableListOf()
         this.lastStateName = ""
         this.betRound = 0
-        this.nextToBetPlayer = null
+        this.currentBetPlayer = null
+        this.stage = StageType.BET_AFTER_DEAL_PLAYER_CARDS
+
+        this.playerList.forEach { it.reset() }
     }
 
-    fun updateRound() {
+    fun beforeRound() {
         reset()
         updatePlayerPosition()
         blindFirstBet()
@@ -130,14 +133,14 @@ class Room(val id: String = UUID.randomUUID().toString()) {
             it.updateChips(-gameConfig.smallBlind)
             it.addBetLog(BetLog(this.betRound, BetType.NONE, -gameConfig.smallBlind))
             lastBetPlayer = it
-            nextToBetPlayer = it.nextPlayer
+            currentBetPlayer = it.nextPlayer
         }
 
         playerList.find { it.position == Position.BIG_BLIND }?.let {
             it.updateChips(-gameConfig.bigBlind)
             it.addBetLog(BetLog(this.betRound, BetType.NONE, -gameConfig.bigBlind))
             lastBetPlayer = it
-            nextToBetPlayer = it.nextPlayer
+            currentBetPlayer = it.nextPlayer
         }
     }
 
@@ -210,31 +213,31 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     fun recordCall() {
-        val callScore = (lastBetPlayer?.getBetLog()?.lastOrNull()?.betAmount?.absoluteValue ?: 0) -
-                (nextToBetPlayer?.getBetLog()?.lastOrNull()?.betAmount?.absoluteValue ?: 0)
+        val callScore = (lastBetPlayer?.getBetLog()?.filter { it.betRound == betRound }?.sumOf { it.betAmount }?.absoluteValue ?: 0) -
+                (currentBetPlayer?.getBetLog()?.filter { it.betRound == betRound }?.sumOf { it.betAmount }?.absoluteValue ?: 0)
 
-        nextToBetPlayer?.updateChips(-callScore)
-        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, -callScore))
+        currentBetPlayer?.updateChips(-callScore)
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, -callScore))
     }
 
     fun recordRaise(betAmount: Int) {
-        nextToBetPlayer?.updateChips(-betAmount)
-        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.RAISE, -betAmount))
+        currentBetPlayer?.updateChips(-betAmount)
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.RAISE, -betAmount))
     }
 
     fun recordFold() {
-        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.FOLD, 0))
-        nextToBetPlayer?.isFold = true
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.FOLD, 0))
+        currentBetPlayer?.isFold = true
     }
 
     fun recordCheck() {
-        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CHECK, 0))
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CHECK, 0))
     }
 
     fun recordAllIn() {
-        val remaining = nextToBetPlayer?.getChipsAmount() ?: 0
-        nextToBetPlayer?.updateChips(-remaining)
-        nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, -remaining))
+        val remaining = currentBetPlayer?.getChipsAmount() ?: 0
+        currentBetPlayer?.updateChips(-remaining)
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, -remaining))
     }
 
 }
