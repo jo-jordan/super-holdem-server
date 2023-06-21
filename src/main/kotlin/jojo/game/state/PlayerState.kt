@@ -69,12 +69,12 @@ sealed class PlayerState(open val player: Player) {
 
     class PlayerBettingState(override val player: Player) : PlayerState(player) {
         override fun enter() {
+            logger.info("Player[{}, {}] is betting.", player.name, player.id)
             val reqData = ReqData.GameUpdateBetDTO().apply {
                 this.roomId = player.room?.id ?: ""
                 this.playerId = player.id
             }
             Dispatcher.dispatch(reqData)
-            logger.info("Player[{}, {}] is betting.", player.name, player.id)
         }
 
         override fun exit() {

@@ -83,6 +83,7 @@ sealed class RespData {
 
     data class GameStartDTO(
         override var type: DataType = DataType.GAME_START,
+        var roomInfo: RoomInfoDTO = RoomInfoDTO(),
     ) : RespData()
 
     data class GameDealPlayerCardsDTO(

@@ -84,54 +84,93 @@ sealed class RoomState(open val room: Room) {
     class RoomBettingState(override val room: Room) : RoomState(room) {
 
         override fun enter() {
+            logger.trace("Room is betting.")
             room.getPlayerList().forEach {
                 it.transitionTo(PlayerState.PlayerWaitingState(it))
             }
-            logger.trace("Room is betting.")
-            continueCurrentRound()
+            if (checkBetsEqual()) {
+                transitionToNextState()
+            } else {
+                continueCurrentRound()
+            }
+        }
+
+        private fun transitionToNextState() {
+            when (room.stage) {
+                StageType.BET_AFTER_DEAL_PLAYER_CARDS -> {
+                    room.transitionTo(RoomDealFlopCardsState(room))
+                }
+                StageType.BET_AFTER_DEAL_FLOP_CARDS -> {
+                    room.transitionTo(RoomDealTurnCardState(room))
+                }
+                StageType.BET_AFTER_DEAL_TURN_CARDS -> {
+                    room.transitionTo(RoomDealRiverCardState(room))
+                }
+                StageType.BET_AFTER_DEAL_RIVER_CARDS -> {
+                    room.transitionTo(RoomEndState(room))
+                }
+
+                else -> {}
+            }
+        }
+
+        private fun isAllPlayerAllIn(): Boolean {
+            return room.getPlayerList().filter { !it.isFold }.all { it.getChipsAmount() == 0 }
         }
 
         override fun update() {
             if (checkBetsEqual()) {
-                when (room.stage) {
-                    StageType.BET_AFTER_DEAL_PLAYER_CARDS -> {
-                        room.transitionTo(RoomDealFlopCardsState(room))
-                    }
-                    StageType.BET_AFTER_DEAL_FLOP_CARDS -> {
-                        room.transitionTo(RoomDealTurnCardState(room))
-                    }
-                    StageType.BET_AFTER_DEAL_TURN_CARDS -> {
-                        room.transitionTo(RoomDealRiverCardState(room))
-                    }
-                    StageType.BET_AFTER_DEAL_RIVER_CARDS -> {
-                        room.transitionTo(RoomEndState(room))
-                    }
-
-                    else -> {}
-                }
+                transitionToNextState()
             } else {
                 continueCurrentRound()
             }
         }
 
         private fun continueCurrentRound() {
-            // update nextToBetPlayer to the next active player
-
-            if (room.nextToBetPlayer?.position == Position.BIG_BLIND && room.betRound == 0) {
-                room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
-            } else {
-                if (room.lastBetPlayer?.getBetLog()?.last()?.betType == BetType.CHECK) {
-                    room.updateBetTypes(listOf(BetType.CALL, BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
-                } else {
+            // update currentBetPlayer to the next active player
+            val lastBetType = room.lastBetPlayer?.getBetLog()?.last()?.betType
+            val lastBetChips = room.lastBetPlayer?.getBetLog()?.sumOf { it.betAmount } ?: 0
+            val currentBetChips = room.currentBetPlayer?.getBetLog()?.sumOf{ it.betAmount } ?: 0
+            when (lastBetType) {
+                BetType.CALL -> {
+                    if (room.currentBetPlayer?.position == Position.BIG_BLIND
+                        && room.betRound == 0
+                        && lastBetChips == currentBetChips) {
+                        room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                    } else {
+                        room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                    }
+                }
+                BetType.RAISE -> {
                     room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                }
+                BetType.ALL_IN -> {
+                    room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE))
+                }
+                else -> {
+                    if (room.betRound == 0) {
+                        room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                    } else {
+                        room.updateBetTypes(listOf(BetType.CALL, BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                    }
                 }
             }
 
             // update player state to betting
-            room.nextToBetPlayer?.transitionTo(PlayerState.PlayerBettingState(room.nextToBetPlayer!!))
+            room.currentBetPlayer?.transitionTo(PlayerState.PlayerBettingState(room.currentBetPlayer!!))
         }
 
         private fun checkBetsEqual(): Boolean {
+            if (isAllPlayerAllIn()) {
+                room.updateBetTypes(listOf())
+                val reqData = ReqData.GameUpdateBetDTO().apply {
+                    this.roomId = room.id
+                    this.playerId = room.currentBetPlayer?.id ?: ""
+                }
+                Dispatcher.dispatch(reqData)
+                return true
+            }
+
             val activePlayers = room.getPlayerList().filter { !it.isFold }
             val maxBet = activePlayers.maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } }
 
@@ -141,7 +180,7 @@ sealed class RoomState(open val room: Room) {
             }
 
             return activePlayers.all { player ->
-                player.getBetLog().last().betRound == room.betRound && player.getBetLog().sumOf { it.betAmount } == maxBet
+                player.getBetLog().lastOrNull()?.betRound == room.betRound && player.getBetLog().sumOf { it.betAmount } == maxBet
             }
         }
 
@@ -149,7 +188,7 @@ sealed class RoomState(open val room: Room) {
 
             room.betRound++
             if (room.betRound > 0) {  // after the first round
-                room.nextToBetPlayer = room.getPlayerList().find { it.position == Position.SMALL_BLIND }
+                room.currentBetPlayer = room.getPlayerList().find { it.position == Position.SMALL_BLIND }
             }
             logger.trace("Room has bet.")
         }
