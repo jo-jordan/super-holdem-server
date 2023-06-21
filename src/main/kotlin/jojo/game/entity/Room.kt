@@ -240,4 +240,8 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, -remaining))
     }
 
+    fun getWinnerChips(): Int {
+        return playerList.sumOf { it.getBetLog().sumOf { bet -> bet.betAmount } }.absoluteValue
+    }
+
 }

@@ -187,15 +187,24 @@ class GameController: Controller() {
         room.calculateWinner()
         val leaderboard =  room.getLeaderboard()
 
+
+
         val playerInfoList = leaderboard.map { p ->
             RespData.PlayerInfoDTO().apply {
+                this.betAmount = p.getBetLog().sumOf { it.betAmount }
+                this.username = p.name
+                this.roomId = param.roomId
                 this.playerId = p.id
                 this.cardList = p.cardList
-                this.winChips = p.getChipsAmount() + p.getBetLog().sumOf { it.betAmount }
+                this.winChips = p.getBetLog().sumOf { it.betAmount }
                 this.position = p.position
             }
         }
-        val respData = RespData.GameResultDTO(winner = playerInfoList.first()).apply {
+
+        val winner = playerInfoList.first()
+        winner.winChips = room.getWinnerChips()
+
+        val respData = RespData.GameResultDTO(winner = winner).apply {
             this.playerId = param.playerId
             this.roomId = param.roomId
             this.leaderboards = playerInfoList
@@ -203,9 +212,8 @@ class GameController: Controller() {
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(respData), true)
 
-
         if (room.round < room.gameConfig.maxRound) {
-            Timer("schedule", true).schedule(5000) {
+            Timer("schedule", true).schedule(15000) {
                 room.transitionTo(RoomState.RoomStartState(room))
             }
         }
