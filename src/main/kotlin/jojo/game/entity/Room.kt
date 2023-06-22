@@ -199,6 +199,14 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         }
     }
 
+    fun findNextActivePlayer(player: Player): Player? {
+        var nextPlayer = player.nextPlayer
+        while (nextPlayer != null && nextPlayer.isFold) {
+            nextPlayer = nextPlayer.nextPlayer
+        }
+        return nextPlayer
+    }
+
     private fun getPlayerInfoList(): List<RespData.PlayerInfoDTO> {
         return playerList.map {
             RespData.PlayerInfoDTO().apply {

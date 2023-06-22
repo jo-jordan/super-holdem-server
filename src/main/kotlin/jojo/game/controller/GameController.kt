@@ -200,7 +200,7 @@ class GameController: Controller() {
         ), true)
 
         room.lastBetPlayer = room.currentBetPlayer
-        room.currentBetPlayer = room.currentBetPlayer?.nextPlayer
+        room.currentBetPlayer = room.findNextActivePlayer(room.currentBetPlayer!!)
         room.updateState()
     }
 

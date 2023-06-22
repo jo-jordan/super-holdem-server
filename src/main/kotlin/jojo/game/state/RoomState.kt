@@ -2,7 +2,6 @@ package jojo.game.state
 
 import jojo.game.core.Dispatcher
 import jojo.game.dto.ReqData
-import jojo.game.entity.Player
 import jojo.game.entity.Room
 import jojo.game.enums.BetType
 import jojo.game.enums.Position
@@ -211,21 +210,13 @@ sealed class RoomState(open val room: Room) {
             }
         }
 
-        private fun findNextActivePlayer(player: Player): Player? {
-            var nextPlayer = player.nextPlayer
-            while (nextPlayer != null && nextPlayer.isFold) {
-                nextPlayer = nextPlayer.nextPlayer
-            }
-            return nextPlayer
-        }
-
         override fun exit() {
 
             room.betRound++
             if (room.betRound > 0) {  // after the first round
                 room.currentBetPlayer = room.getPlayerList().find { it.position == Position.SMALL_BLIND }
                 if (room.currentBetPlayer?.isFold == true) {
-                    room.currentBetPlayer = findNextActivePlayer(room.currentBetPlayer!!)
+                    room.currentBetPlayer = room.findNextActivePlayer(room.currentBetPlayer!!)
                 }
             }
             logger.trace("Room has bet.")
