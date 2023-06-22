@@ -45,6 +45,11 @@ class Room(val id: String = UUID.randomUUID().toString()) {
             this.state = state
             return
         }
+
+        if (state.javaClass.simpleName == this.state?.javaClass?.simpleName) {
+            return
+        }
+
         this.state?.exit()
         this.lastStateName = state.javaClass.simpleName
 
@@ -67,7 +72,7 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     }
 
     fun getLeaderboard(): List<Player> {
-        val list = CardUtils.orderPlayerByCard(playerList)
+        val list = CardUtils.orderPlayerByCard(playerList.filter { !it.isFold })
         list.forEach { it.score = it.maxCardType.second.maxOf { v -> v.value } }
         return list
     }
@@ -131,14 +136,14 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     private fun blindFirstBet() {
         playerList.find { it.position == Position.SMALL_BLIND }?.let {
             it.updateChips(-gameConfig.smallBlind)
-            it.addBetLog(BetLog(this.betRound, BetType.NONE, -gameConfig.smallBlind))
+            it.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.smallBlind))
             lastBetPlayer = it
             currentBetPlayer = it.nextPlayer
         }
 
         playerList.find { it.position == Position.BIG_BLIND }?.let {
             it.updateChips(-gameConfig.bigBlind)
-            it.addBetLog(BetLog(this.betRound, BetType.NONE, -gameConfig.bigBlind))
+            it.addBetLog(BetLog(this.betRound, BetType.NONE, gameConfig.bigBlind))
             lastBetPlayer = it
             currentBetPlayer = it.nextPlayer
         }
@@ -212,17 +217,30 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         return betTypes
     }
 
-    fun recordCall() {
-        val callScore = (lastBetPlayer?.getBetLog()?.filter { it.betRound == betRound }?.sumOf { it.betAmount }?.absoluteValue ?: 0) -
+    fun recordCall(): Int {
+        val maxBet = playerList.maxOfOrNull { it.getBetLog().filter { log-> log.betRound == betRound }.sumOf { log -> log.betAmount } } ?: 0
+        val callScore = maxBet -
                 (currentBetPlayer?.getBetLog()?.filter { it.betRound == betRound }?.sumOf { it.betAmount }?.absoluteValue ?: 0)
 
         currentBetPlayer?.updateChips(-callScore)
-        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, -callScore))
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CALL, callScore))
+
+        return callScore
     }
 
-    fun recordRaise(betAmount: Int) {
+    fun recordRaise(betAmount: Int): Int {
+        if (betAmount <= 0) return 0
+
+        val maxBet = playerList.maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } } ?: 0
+        if (betAmount < maxBet) return 0
+
+        if (betAmount > (currentBetPlayer?.getChipsAmount() ?: 0)) {
+            return recordAllIn()
+        }
         currentBetPlayer?.updateChips(-betAmount)
-        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.RAISE, -betAmount))
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.RAISE, betAmount))
+
+        return betAmount
     }
 
     fun recordFold() {
@@ -234,10 +252,23 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.CHECK, 0))
     }
 
-    fun recordAllIn() {
+    fun recordAllIn(): Int {
         val remaining = currentBetPlayer?.getChipsAmount() ?: 0
         currentBetPlayer?.updateChips(-remaining)
-        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, -remaining))
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, remaining))
+
+        return remaining
+    }
+
+    fun getWinnerChips(): Int {
+        return playerList.sumOf { it.getBetLog().sumOf { bet -> bet.betAmount } }
+    }
+
+    fun recordBet(betAmount: Int): Int {
+        currentBetPlayer?.updateChips(-betAmount)
+        currentBetPlayer?.addBetLog(BetLog(this.betRound, BetType.BET, betAmount))
+
+        return betAmount
     }
 
 }

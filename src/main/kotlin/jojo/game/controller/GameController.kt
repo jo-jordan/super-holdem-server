@@ -19,7 +19,6 @@ import kotlin.concurrent.schedule
 class GameController: Controller() {
 
     fun ready(param: ReqData.GameReadyDTO) {
-
         val player = GameGlobal.playerMap[param.playerId]
         player?.transitionTo(PlayerState.PlayerReadyState(player))
         player?.room?.updateState()
@@ -148,35 +147,58 @@ class GameController: Controller() {
     fun bet(param: ReqData.GameBetDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
         val player = room.getPlayerById(param.playerId)
+
+        if (player?.state !is PlayerState.PlayerBettingState) {
+            return
+        }
+
+        var actualBetAmount = 0
         when (param.betType) {
+            BetType.BET -> {
+                // TODO
+                actualBetAmount = room.recordBet(param.betAmount)
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
+            }
             BetType.CALL -> {
                 // TODO
-                room.recordCall()
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                actualBetAmount = room.recordCall()
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             BetType.RAISE -> {
                 // TODO
-                room.recordRaise(param.betAmount)
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                actualBetAmount = room.recordRaise(param.betAmount)
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             BetType.FOLD -> {
                 room.recordFold()
-                player?.transitionTo(PlayerState.PlayerReadyState(player))
+                player.transitionTo(PlayerState.PlayerReadyState(player))
             }
             BetType.CHECK -> {
                 // TODO
                 room.recordCheck()
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             BetType.ALL_IN -> {
                 // TODO
-                room.recordAllIn()
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                actualBetAmount = room.recordAllIn()
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             else -> {
                 // TODO
             }
         }
+
+        broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
+            RespData.GameBetInfoDTO().apply {
+                this.playerId = param.playerId
+                this.roomId = param.roomId
+                this.playerName = player.name ?: ""
+                this.betType = param.betType
+                this.betAmount = actualBetAmount
+                this.roomBetPool = room.getPlayerList().sumOf { it.getBetLog().sumOf { bet -> bet.betAmount } }
+            }
+        ), true)
+
         room.lastBetPlayer = room.currentBetPlayer
         room.currentBetPlayer = room.currentBetPlayer?.nextPlayer
         room.updateState()
@@ -185,17 +207,24 @@ class GameController: Controller() {
     fun result(param: ReqData.GameResultDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
         room.calculateWinner()
-        val leaderboard =  room.getLeaderboard()
+        val leaderboard = room.getLeaderboard()
 
         val playerInfoList = leaderboard.map { p ->
             RespData.PlayerInfoDTO().apply {
+                this.betAmount = p.getBetLog().sumOf { it.betAmount }
+                this.username = p.name
+                this.roomId = param.roomId
                 this.playerId = p.id
                 this.cardList = p.cardList
-                this.winChips = p.getChipsAmount() + p.getBetLog().sumOf { it.betAmount }
+                this.winChips = p.getBetLog().sumOf { it.betAmount }
                 this.position = p.position
             }
         }
-        val respData = RespData.GameResultDTO(winner = playerInfoList.first()).apply {
+
+        val winner = playerInfoList.first()
+        winner.winChips = room.getWinnerChips()
+
+        val respData = RespData.GameResultDTO(winner = winner).apply {
             this.playerId = param.playerId
             this.roomId = param.roomId
             this.leaderboards = playerInfoList
@@ -203,9 +232,8 @@ class GameController: Controller() {
 
         broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(respData), true)
 
-
         if (room.round < room.gameConfig.maxRound) {
-            Timer("schedule", true).schedule(5000) {
+            Timer("schedule", true).schedule(15000) {
                 room.transitionTo(RoomState.RoomStartState(room))
             }
         }

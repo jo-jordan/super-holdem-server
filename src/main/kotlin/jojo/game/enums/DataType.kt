@@ -21,6 +21,7 @@ enum class DataType {
     GAME_DEAL_TURN_CARDS,
     GAME_DEAL_RIVER_CARDS,
     GAME_UPDATE_BET,
+    GAME_BET_INFO, // tell everyone who bet what
     GAME_ROUND
 
 }

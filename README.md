@@ -16,3 +16,7 @@ docker run -p 8887:8887 -p 8888:8888 super-holdem-server
 The auth server will be available at http://localhost:8887.
 
 websockets will be available at ws://localhost:8888.
+
+## Bugs
+
+1. check bet equal has no effect sometimes

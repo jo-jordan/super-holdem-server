@@ -27,6 +27,7 @@ import jojo.game.enums.Position
     JsonSubTypes.Type(value = RespData.GameDealTurnCardsDTO::class, name = "GAME_DEAL_TURN_CARDS"),
     JsonSubTypes.Type(value = RespData.GameDealRiverCardsDTO::class, name = "GAME_DEAL_RIVER_CARDS"),
     JsonSubTypes.Type(value = RespData.GameUpdateBetDTO::class, name = "GAME_UPDATE_BET"),
+    JsonSubTypes.Type(value = RespData.GameBetInfoDTO::class, name = "GAME_BET_INFO"),
     JsonSubTypes.Type(value = RespData.GameResultDTO::class, name = "GAME_RESULT"),
 )
 sealed class RespData {
@@ -111,6 +112,14 @@ sealed class RespData {
         override var type: DataType = DataType.GAME_UPDATE_BET,
         var operationList: MutableMap<String, List<BetType>> = mutableMapOf(),
         var roomInfo: RoomInfoDTO = RoomInfoDTO(),
+    ) : RespData()
+
+    data class GameBetInfoDTO(
+        override var type: DataType = DataType.GAME_BET_INFO,
+        var betType: BetType = BetType.NONE,
+        var betAmount: Int = 0,
+        var roomBetPool: Int = 0,
+        var playerName: String = ""
     ) : RespData()
 
     data class GameResultDTO(
