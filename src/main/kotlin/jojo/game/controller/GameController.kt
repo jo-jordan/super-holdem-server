@@ -19,7 +19,6 @@ import kotlin.concurrent.schedule
 class GameController: Controller() {
 
     fun ready(param: ReqData.GameReadyDTO) {
-
         val player = GameGlobal.playerMap[param.playerId]
         player?.transitionTo(PlayerState.PlayerReadyState(player))
         player?.room?.updateState()

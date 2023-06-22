@@ -50,6 +50,11 @@ class Player {
             this.state = state
             return
         }
+
+        if (state.javaClass.simpleName == this.state?.javaClass?.simpleName) {
+            return
+        }
+
         this.state?.exit()
 
         this.state = state

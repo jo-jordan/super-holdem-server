@@ -45,6 +45,11 @@ class Room(val id: String = UUID.randomUUID().toString()) {
             this.state = state
             return
         }
+
+        if (state.javaClass.simpleName == this.state?.javaClass?.simpleName) {
+            return
+        }
+
         this.state?.exit()
         this.lastStateName = state.javaClass.simpleName
 
