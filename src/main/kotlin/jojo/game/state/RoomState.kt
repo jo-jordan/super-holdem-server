@@ -177,7 +177,7 @@ sealed class RoomState(open val room: Room) {
                 }
             }
 
-            if (lastBetRound < room.betRound) {
+            if (lastBetRound < room.betRound || room.lastBetPlayer == room.currentBetPlayer) {
                 room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
             }
 
