@@ -158,16 +158,19 @@ class GameController: Controller() {
                 // TODO
                 actualBetAmount = room.recordBet(param.betAmount)
                 player.transitionTo(PlayerState.PlayerWaitingState(player))
+                room.lastBetPlayer = room.currentBetPlayer
             }
             BetType.CALL -> {
                 // TODO
                 actualBetAmount = room.recordCall()
                 player.transitionTo(PlayerState.PlayerWaitingState(player))
+                room.lastBetPlayer = room.currentBetPlayer
             }
             BetType.RAISE -> {
                 // TODO
                 actualBetAmount = room.recordRaise(param.betAmount)
                 player.transitionTo(PlayerState.PlayerWaitingState(player))
+                room.lastBetPlayer = room.currentBetPlayer
             }
             BetType.FOLD -> {
                 room.recordFold()
@@ -177,11 +180,13 @@ class GameController: Controller() {
                 // TODO
                 room.recordCheck()
                 player.transitionTo(PlayerState.PlayerWaitingState(player))
+                room.lastBetPlayer = room.currentBetPlayer
             }
             BetType.ALL_IN -> {
                 // TODO
                 actualBetAmount = room.recordAllIn()
                 player.transitionTo(PlayerState.PlayerWaitingState(player))
+                room.lastBetPlayer = room.currentBetPlayer
             }
             else -> {
                 // TODO
@@ -199,7 +204,7 @@ class GameController: Controller() {
             }
         ), true)
 
-        room.lastBetPlayer = room.currentBetPlayer
+
         room.currentBetPlayer = room.findNextActivePlayer(room.currentBetPlayer!!)
         room.updateState()
     }
