@@ -231,7 +231,12 @@ class Room(val id: String = UUID.randomUUID().toString()) {
     fun recordRaise(betAmount: Int): Int {
         if (betAmount <= 0) return 0
 
-        val maxBet = playerList.maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } } ?: 0
+        val maxBet = playerList
+            .maxOfOrNull {
+                it.getBetLog()
+                    .filter { log -> log.betRound == betRound }
+                    .filter { log -> log.betType != BetType.FOLD }
+                    .sumOf { log -> log.betAmount } } ?: 0
         if (betAmount < maxBet) return 0
 
         if (betAmount > (currentBetPlayer?.getChipsAmount() ?: 0)) {
