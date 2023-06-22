@@ -2,6 +2,7 @@ package jojo.game.state
 
 import jojo.game.core.Dispatcher
 import jojo.game.dto.ReqData
+import jojo.game.entity.Player
 import jojo.game.entity.Room
 import jojo.game.enums.BetType
 import jojo.game.enums.Position
@@ -118,7 +119,15 @@ sealed class RoomState(open val room: Room) {
             return room.getPlayerList().filter { !it.isFold }.all { it.getChipsAmount() == 0 }
         }
 
+        private fun getNowActivePlayerCount(): Int {
+            return room.getPlayerList().count { !it.isFold }
+        }
+
         override fun update() {
+            if (getNowActivePlayerCount() < 2) {
+                room.transitionTo(RoomEndState(room))
+                return
+            }
             if (checkBetsEqual()) {
                 transitionToNextState()
             } else {
@@ -128,6 +137,7 @@ sealed class RoomState(open val room: Room) {
 
         private fun continueCurrentRound() {
             // update currentBetPlayer to the next active player
+            val lastBetRound = room.lastBetPlayer?.getBetLog()?.last()?.betRound ?: 0
             val lastBetType = room.lastBetPlayer?.getBetLog()?.last()?.betType
             val lastBetChips = room.lastBetPlayer?.getBetLog()?.sumOf { it.betAmount } ?: 0
             val currentBetChips = room.currentBetPlayer?.getBetLog()?.sumOf{ it.betAmount } ?: 0
@@ -147,13 +157,28 @@ sealed class RoomState(open val room: Room) {
                 BetType.ALL_IN -> {
                     room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE))
                 }
+                BetType.FOLD -> {
+                    if (room.betRound == 0) {
+                        if (room.currentBetPlayer?.position == Position.BIG_BLIND) {
+                            room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                        } else {
+                            room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                        }
+                    } else {
+                        room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                    }
+                }
                 else -> {
                     if (room.betRound == 0) {
                         room.updateBetTypes(listOf(BetType.CALL, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
                     } else {
-                        room.updateBetTypes(listOf(BetType.CALL, BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
+                        room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
                     }
                 }
+            }
+
+            if (lastBetRound < room.betRound) {
+                room.updateBetTypes(listOf(BetType.CHECK, BetType.FOLD, BetType.RAISE, BetType.ALL_IN))
             }
 
             // update player state to betting
@@ -175,7 +200,9 @@ sealed class RoomState(open val room: Room) {
             val maxBet = activePlayers.maxOfOrNull { it.getBetLog().sumOf { log -> log.betAmount } }
 
             // 额外的条件，用于检查当前的下注玩家是否为大盲位玩家
-            if (room.betRound == 0 && room.lastBetPlayer?.position != Position.BIG_BLIND) {
+            if (room.betRound == 0
+                && room.currentBetPlayer?.position == Position.BIG_BLIND
+                && room.currentBetPlayer?.getBetLog()?.size?.compareTo(1) == 0) {
                 return false
             }
 
@@ -184,11 +211,22 @@ sealed class RoomState(open val room: Room) {
             }
         }
 
+        private fun findNextActivePlayer(player: Player): Player? {
+            var nextPlayer = player.nextPlayer
+            while (nextPlayer != null && nextPlayer.isFold) {
+                nextPlayer = nextPlayer.nextPlayer
+            }
+            return nextPlayer
+        }
+
         override fun exit() {
 
             room.betRound++
             if (room.betRound > 0) {  // after the first round
                 room.currentBetPlayer = room.getPlayerList().find { it.position == Position.SMALL_BLIND }
+                if (room.currentBetPlayer?.isFold == true) {
+                    room.currentBetPlayer = findNextActivePlayer(room.currentBetPlayer!!)
+                }
             }
             logger.trace("Room has bet.")
         }

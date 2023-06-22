@@ -39,15 +39,23 @@ class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
 
         val player = GameGlobal.playerMap[commonData?.playerId]
 
-        commonData?.roomId?.let { roomId ->
-            player?.let {
-                GameGlobal.roomMap[roomId]?.removePlayer(player)
-                GameGlobal.roomConnections[roomId]?.remove(player.id)
-            }
-        }
+        player?.let {
+            player.room?.let { room ->
+                room.removePlayer(player)
+                room.removePlayerConnection(player.id)
 
-        commonData?.playerId?.let { playerId ->
-            GameGlobal.playerMap.remove(playerId)
+                GameGlobal.roomMap[room.id]?.removePlayer(player)
+                GameGlobal.roomConnections[room.id]?.remove(player.id)
+                logger.info("Player {}: {} disconnected, remove it from room: {}", player.name, player.id, room.id)
+
+                if (room.getPlayerList().isEmpty()) {
+                    GameGlobal.roomMap.remove(room.id)
+                    logger.info("Room {} is empty, remove it from roomMap", room.id)
+                }
+            }
+
+            GameGlobal.playerMap.remove(player.id)
+            logger.info("Player {} quit game", player.id)
         }
     }
 

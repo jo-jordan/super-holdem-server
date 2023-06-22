@@ -148,35 +148,58 @@ class GameController: Controller() {
     fun bet(param: ReqData.GameBetDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
         val player = room.getPlayerById(param.playerId)
+
+        if (player?.state !is PlayerState.PlayerBettingState) {
+            return
+        }
+
+        var actualBetAmount = 0
         when (param.betType) {
+            BetType.BET -> {
+                // TODO
+                actualBetAmount = room.recordBet(param.betAmount)
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
+            }
             BetType.CALL -> {
                 // TODO
-                room.recordCall()
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                actualBetAmount = room.recordCall()
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             BetType.RAISE -> {
                 // TODO
-                room.recordRaise(param.betAmount)
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                actualBetAmount = room.recordRaise(param.betAmount)
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             BetType.FOLD -> {
                 room.recordFold()
-                player?.transitionTo(PlayerState.PlayerReadyState(player))
+                player.transitionTo(PlayerState.PlayerReadyState(player))
             }
             BetType.CHECK -> {
                 // TODO
                 room.recordCheck()
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             BetType.ALL_IN -> {
                 // TODO
-                room.recordAllIn()
-                player?.transitionTo(PlayerState.PlayerWaitingState(player))
+                actualBetAmount = room.recordAllIn()
+                player.transitionTo(PlayerState.PlayerWaitingState(player))
             }
             else -> {
                 // TODO
             }
         }
+
+        broadcast(param.roomId, param.playerId, JacksonUtils.objectMapper.writeValueAsString(
+            RespData.GameBetInfoDTO().apply {
+                this.playerId = param.playerId
+                this.roomId = param.roomId
+                this.playerName = player.name ?: ""
+                this.betType = param.betType
+                this.betAmount = actualBetAmount
+                this.roomBetPool = room.getPlayerList().sumOf { it.getBetLog().sumOf { bet -> bet.betAmount } }
+            }
+        ), true)
+
         room.lastBetPlayer = room.currentBetPlayer
         room.currentBetPlayer = room.currentBetPlayer?.nextPlayer
         room.updateState()
@@ -185,9 +208,7 @@ class GameController: Controller() {
     fun result(param: ReqData.GameResultDTO) {
         val room = GameGlobal.roomMap.getValue(param.roomId)
         room.calculateWinner()
-        val leaderboard =  room.getLeaderboard()
-
-
+        val leaderboard = room.getLeaderboard()
 
         val playerInfoList = leaderboard.map { p ->
             RespData.PlayerInfoDTO().apply {

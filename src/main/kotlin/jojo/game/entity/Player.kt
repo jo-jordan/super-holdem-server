@@ -22,7 +22,7 @@ class Player {
     var room: Room? = null
     var maxCardType = Pair(CardType.NONE, emptyList<Card>())
     var cardsToCalculate = emptyList<Card>()
-    var isFold = false
+    var isFold = true
     private var chipsAmount : Int = 100000
 
     private var betLog: List<BetLog> = mutableListOf()
