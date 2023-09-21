@@ -31,6 +31,10 @@ object CardUtils {
         shuffle()
     }
 
+    fun getCardById(id: Int): Card? {
+        return cardList.find { it.id == id }
+    }
+
 
     fun shuffle() {
         cardList.shuffle()

@@ -2,6 +2,7 @@ package jojo.game.entity
 
 import jojo.game.enums.CardType
 import jojo.game.enums.Position
+import jojo.game.global.GameGlobal
 import jojo.game.state.PlayerState
 import jojo.game.utils.CardUtils
 import org.slf4j.Logger
@@ -68,5 +69,38 @@ class Player {
         this.maxCardType = CardUtils.calculateCardType(this.cardsToCalculate)
 
         return this.maxCardType
+    }
+
+    fun snapshot(): Map<String, String> {
+        return hashMapOf(
+            "id" to id,
+            "name" to name,
+            "cardList" to cardList.joinToString { "${it.id}" }, //
+            "ready" to ready.toString(),
+            "score" to score.toString(),
+            "position" to position.name,
+            "nextPlayer" to (nextPlayer?.id ?: ""),
+            "room" to (room?.id ?: ""),
+            "maxCardType" to maxCardType.toString(),
+            "cardsToCalculate" to cardsToCalculate.map {it.id }.joinToString { "," },
+            "isFold" to isFold.toString()
+        ).filterValues { it != "" && it != "null" && it != "[]" }
+    }
+
+    companion object {
+        fun fromCache(map: Map<String, String>): Player {
+            var player = GameGlobal.playerMap[map.getValue("id")]
+            if (player == null) {
+                player = Player()
+            }
+            player.name = map.getValue("name")
+            player.id = map.getValue("id")
+            player.room = GameGlobal.roomMap[map.getValue("room")]
+            player.nextPlayer = GameGlobal.playerMap[map.getValue("nextPlayer")]
+            player.isFold = map.getValue("isFold").toBoolean()
+//        player.position = map.getValue("position")
+
+            return player
+        }
     }
 }

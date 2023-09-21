@@ -1,6 +1,8 @@
 package jojo.game.entity
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jojo.game.core.rotate
+import jojo.game.dao.RedisTool
 import jojo.game.dto.RespData
 import jojo.game.enums.BetType
 import jojo.game.enums.Position
@@ -8,10 +10,12 @@ import jojo.game.enums.StageType
 import jojo.game.global.GameGlobal
 import jojo.game.state.RoomState
 import jojo.game.utils.CardUtils
+import jojo.game.utils.JacksonUtils
 import org.java_websocket.WebSocket
 import java.util.*
 import kotlin.math.absoluteValue
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 class Room(val id: String = UUID.randomUUID().toString()) {
     private var playerList: List<Player> = mutableListOf()
     var name: String = ""
@@ -93,6 +97,9 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         return playerList
     }
 
+    fun setPlayerList(list: List<Player>) {
+        this.playerList = list
+    }
     fun addPlayerConnection(playerId: String, conn: WebSocket?) {
         if (!GameGlobal.roomConnections.containsKey(id))
             GameGlobal.roomConnections[id] = mutableMapOf()
@@ -237,4 +244,48 @@ class Room(val id: String = UUID.randomUUID().toString()) {
         nextToBetPlayer?.addBetLog(BetLog(this.betRound, BetType.ALL_IN, -remaining))
     }
 
+    fun snapshot(): Map<String, String> {
+        return hashMapOf(
+            "id" to id,
+            "name" to name,
+            "betRound" to "$betRound",
+            "cards" to cards.joinToString { "${it.id}" }, //
+            "playerList" to playerList.joinToString { it.id }, //
+            "round" to "$round",
+            "lastStateName" to lastStateName,
+            "totalScore" to "$totalScore",
+            "gamaConfig" to JacksonUtils.objectMapper.writeValueAsString(gameConfig),
+            "lastBetPlayer" to (lastBetPlayer?.id ?: ""), //
+            "nextToBetPlayer" to (nextToBetPlayer?.id ?: ""), //
+            "stage" to stage.name,
+            "betTypes" to JacksonUtils.objectMapper.writeValueAsString(betTypes),
+        ).filterValues { it != null && it != "" && it != "null" && it != "[]" }
+    }
+
+    companion object {
+        fun fromCache(map: Map<String, String>): Room {
+            var roomInMemory = GameGlobal.roomMap[map.getValue("id")]
+            if (roomInMemory == null) {
+                roomInMemory = Room(map.getValue("id"))
+            }
+
+            roomInMemory.name = map.getValue("name")
+            roomInMemory.betRound = map.getValue("betRound").toInt()
+            roomInMemory.cards = map["cards"]?.split(",")?.mapNotNull { CardUtils.getCardById(it.toInt()) } ?: emptyList()
+            val playerList = RedisTool.getPlayers(roomInMemory, map.getValue("playerList").split(","))
+            roomInMemory.setPlayerList(playerList)
+            roomInMemory.round = map.getValue("round").toInt()
+            roomInMemory.lastStateName = map["lastStateName"] ?: ""
+            roomInMemory.totalScore = map.getValue("totalScore").toInt()
+            roomInMemory.gameConfig = JacksonUtils.stringToObject<GameConfig>(map.getValue("gamaConfig"))
+            roomInMemory.lastBetPlayer = playerList.find { it.id == map.getValue("lastBetPlayer") }
+            roomInMemory.nextToBetPlayer = playerList.find { it.id == map.getValue("lastStateName") }
+            roomInMemory.stage = StageType.byName(map.getValue("stage"))
+            map["betTypes"]?.split(",")?.map { BetType.byName(it) }?.let {
+                roomInMemory.updateBetTypes(it)
+            }
+
+            return roomInMemory
+        }
+    }
 }

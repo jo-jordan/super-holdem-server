@@ -7,4 +7,6 @@ data class GameConfig(
     var minPlayer: Int = 3,
     var maxRound: Int = 10,
     var numToStart: Int = 3,
-)
+) {
+
+}

@@ -2,6 +2,7 @@ package jojo.game
 
 import jojo.game.constant.CommonHeaders
 import jojo.game.core.Dispatcher
+import jojo.game.dao.RedisTool
 import jojo.game.dto.CommonData
 import jojo.game.dto.ReqData
 import jojo.game.global.GameGlobal
@@ -15,6 +16,11 @@ import java.net.InetSocketAddress
 class GameServer(port: Int): WebSocketServer(InetSocketAddress(port)) {
 
     private val logger = LoggerFactory.getLogger("GameServer")
+
+    init {
+        RedisTool.initRooms()
+        RedisTool.initPlayers()
+    }
 
     override fun onOpen(conn: WebSocket?, handshake: ClientHandshake?) {
         if (handshake?.hasFieldValue(CommonHeaders.HEADER_PLAYER_ID) == false) {
